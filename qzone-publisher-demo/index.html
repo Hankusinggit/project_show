@@ -238,14 +238,41 @@ img { display: block; max-width: 100%; }
 }
 .p-likes .avatar { width: 18px; height: 18px; font-size: 10px; }
 
+/* 评论区：评论列表 + 评论输入框 */
+.p-comments { margin-top: 10px; }
+.p-comment-list { display: flex; flex-direction: column; gap: 9px; }
+.p-comment { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
+.p-comment .avatar { flex: none; width: 28px; height: 28px; font-size: 12px; }
+.p-comment-text { flex: 1; min-width: 0; color: var(--ink); }
+.p-comment-name { font-weight: 700; margin-right: 6px; color: var(--ink); }
+.p-comment-time { font-size: 11px; color: var(--ink-3); margin-left: 6px; }
+.p-comment-input {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 8px 12px;
+  background: #F5F5F5; border-radius: 10px;
+}
+.p-comment-input .avatar { flex: none; width: 28px; height: 28px; font-size: 12px; }
+.p-comment-input input {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font-size: 14px; color: var(--ink); padding: 4px 0;
+}
+.p-comment-input input::placeholder { color: var(--ink-3); }
+.p-comment-input button {
+  flex: none; background: var(--blue); color: #fff;
+  border-radius: 999px; padding: 5px 14px;
+  font-size: 12.5px; font-weight: 600;
+}
+.p-comment-input button:disabled { background: #D8DCE3; cursor: default; }
+
 /* 卡片底部：时间居左，操作居右（按真机样式） */
 .p-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
 .p-time { font-size: 12px; color: var(--ink-2); }
 .p-foot .p-time { margin-top: 0; }
-.p-acts { display: flex; align-items: center; gap: 22px; }
+.p-acts { display: flex; align-items: center; gap: 18px; flex-shrink: 0; white-space: nowrap; }
 .act {
-  display: flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
   color: var(--ink-2); font-size: 13px; padding: 4px 0;
+  flex: none;
 }
 .act:active { opacity: 0.55; }
 .act.liked { color: #F06060; }
@@ -731,6 +758,11 @@ const DATA = {
       id: 's2', author: 'Momo', time: '07-24 10:41',
       text: '连着加了一周班，今天终于把二编辑的媒体恢复逻辑理顺了。结论：任何看起来简单的「回显」，背后都藏着一堆边界条件。深有感触的举个手 🙋',
       likes: 41, comments: 12, likers: ['小林', '阿哲'],
+      commentList: [
+        { name: '小林', text: '握个手！我这周也卡在回显数据对不上，太难了 😭', time: '昨天 09:12' },
+        { name: '阿哲', text: '前端显示层一致性问题确实很多，深有体会。', time: '昨天 11:30' },
+        { name: 'Kevin', text: '看看我们的测试用例能不能覆盖到。', time: '昨天 14:05' },
+      ],
     },
     {
       id: 's3', author: '小林', time: '昨天 18:20',
@@ -741,12 +773,19 @@ const DATA = {
         { img: 'assets/photo-boat.jpg' },
       ],
       loc: '深圳 · 大梅沙海滨公园', likes: 23, comments: 6,
+      commentList: [
+        { name: 'Hank', text: '真羡慕！我也想找个周末去吹吹海风。', time: '今天 08:50' },
+        { name: 'Momo', text: '是哪片海？看起来很美 ✨', time: '昨天 22:15' },
+      ],
     },
     {
       id: 's4', author: 'Kevin', time: '昨天 21:04',
       text: '<span class="tag">#今天吃什么#</span> 深夜食堂第 108 天：还是牛肉面，加了个蛋 🍜',
       ph: [{ img: 'assets/photo-noodle.jpg' }],
       likes: 5, comments: 2,
+      commentList: [
+        { name: '老王', text: '这碗面看着也太香了吧 🍜', time: '昨天 22:10' },
+      ],
     },
     {
       id: 's5', author: '阿哲', time: '07-23 22:10',
@@ -772,7 +811,9 @@ const state = {
   images: [],            // { url, dataUrl }
   visibility: 'public',
   location: null,
-  liked: new Set(),      // 本次会话点过赞的说说
+  liked: new Set(),      // 本次会话点过赞的说说 id
+  /* 我的评论：{ [postId]: [{name, avatar, text, time}] }，按发布顺序追加 */
+  myComments: {},
 };
 
 const $ = id => document.getElementById(id);
@@ -815,6 +856,88 @@ function avatarEl(a, cls) {
     d.textContent = a.emoji;
   }
   return d;
+}
+
+/* ==========================================================================
+ * 评论区（始终展开）：预置评论 + 我的评论，平铺展示，底部有头像 + 输入框
+ * ========================================================================== */
+function renderComments(p) {
+  const wrap = document.createElement('div');
+  wrap.className = 'p-comments';
+
+  /* 把预置评论和我写的评论合并，按"我写的在后" */
+  const myCmts = state.myComments[p.id] || [];
+  const preset = (p.commentList || []).map(c => ({ ...c, mine: false }));
+  const mine = myCmts.map(c => ({ ...c, mine: true }));
+  const all = preset.concat(mine);
+
+  if (all.length > 0) {
+    const list = document.createElement('div');
+    list.className = 'p-comment-list';
+    all.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'p-comment';
+      /* 头像：Hank 用自身头像，其他用好友头像 */
+      let av;
+      if (c.mine || c.name === DATA.me.name) {
+        av = avatarEl(DATA.me.avatar);
+      } else {
+        const f = DATA.friends.find(x => x.name === c.name);
+        av = avatarEl(f ? f.avatar : DATA.friends[0].avatar);
+      }
+      const txt = document.createElement('div');
+      txt.className = 'p-comment-text';
+      const name = document.createElement('span');
+      name.className = 'p-comment-name';
+      name.textContent = c.name;
+      const body = document.createTextNode(c.text);
+      const tm = document.createElement('span');
+      tm.className = 'p-comment-time';
+      tm.textContent = c.time;
+      txt.append(name, body, document.createElement('br'), tm);
+      item.append(av, txt);
+      list.appendChild(item);
+    });
+    wrap.appendChild(list);
+  }
+
+  /* 底部输入框：头像 + 输入框 + 发布按钮 */
+  const input = document.createElement('div');
+  input.className = 'p-comment-input';
+  const myAva = avatarEl(DATA.me.avatar);
+  const tf = document.createElement('input');
+  tf.type = 'text';
+  tf.placeholder = '说点什么吧...';
+  tf.maxLength = 120;
+  const btn = document.createElement('button');
+  btn.textContent = '发送';
+  btn.disabled = true;
+  tf.addEventListener('input', () => {
+    btn.disabled = tf.value.trim().length === 0;
+  });
+  btn.addEventListener('click', () => submitComment(p.id, tf));
+  tf.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && tf.value.trim()) submitComment(p.id, tf);
+  });
+  input.append(myAva, tf, btn);
+  wrap.appendChild(input);
+
+  return wrap;
+}
+
+/* 提交评论：追加到 state.myComments，重渲染整个 feed */
+function submitComment(postId, inputEl) {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  if (!state.myComments[postId]) state.myComments[postId] = [];
+  state.myComments[postId].push({
+    name: DATA.me.name,
+    avatar: DATA.me.avatar,
+    text,
+    time: '刚刚',
+  });
+  inputEl.value = '';
+  renderFeed();
 }
 
 function postCard(p) {
@@ -884,19 +1007,29 @@ function postCard(p) {
     card.appendChild(g);
   }
 
-  /* 赞过的好友预览条 */
-  if (p.likers && p.likers.length) {
+  /* 赞过的好友预览条（含实时联动：已点赞时 Hank 头像出现在最前面） */
+  const isLiked = state.liked.has(p.id);
+  const allLikers = isLiked ? [DATA.me.name, ...(p.likers || [])] : (p.likers || []);
+  if (allLikers.length > 0) {
     const lk = document.createElement('div');
     lk.className = 'p-likes';
-    p.likers.slice(0, 3).forEach(n => {
-      const f = DATA.friends.find(x => x.name === n);
-      if (f) lk.appendChild(avatarEl(f.avatar));
+    allLikers.slice(0, 3).forEach(n => {
+      if (n === DATA.me.name) {
+        lk.appendChild(avatarEl(DATA.me.avatar));
+      } else {
+        const f = DATA.friends.find(x => x.name === n);
+        if (f) lk.appendChild(avatarEl(f.avatar));
+      }
     });
     const s = document.createElement('span');
-    s.textContent = p.likers.join('、') + ' 觉得很赞';
+    s.textContent = allLikers.join('、') + ' 觉得很赞';
     lk.appendChild(s);
     card.appendChild(lk);
   }
+
+  /* 评论总数（含我的评论）：决定底部"评论"按钮显示的数字 */
+  const myCount = (state.myComments[p.id] || []).length;
+  const totalComments = (p.commentList ? p.commentList.length : 0) + myCount;
 
   /* 底部：时间居左，赞/评论/转发居右（按真机样式） */
   const foot = document.createElement('div');
@@ -915,15 +1048,19 @@ function postCard(p) {
     '<button class="act like' + (liked ? ' liked' : '') + '" data-id="' + p.id + '">' +
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="' + (liked ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4.5A1.5 1.5 0 0 1 3 18.5V11.5A1.5 1.5 0 0 1 4.5 10H7zm0 0 3.6-6.4c.3-.6 1-.9 1.7-.7l.6.2c.7.2 1.1 1 .9 1.7L12.8 9h4.9c1.3 0 2.3 1.2 2 2.5l-1.4 6.3c-.2 1.3-1.3 2.2-2.6 2.2H7"/></svg>' +
     '<span>' + (likeCount > 0 ? likeCount : '赞') + '</span></button>' +
-    '<button class="act" onclick="toast(\'评论功能演示中，先点赞吧 👆\')">' +
+    '<button class="act">' +
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.3-2.9A8 8 0 1 1 21 12z"/></svg>' +
-    '<span>' + (p.comments ? p.comments : '评论') + '</span></button>' +
+    '<span>' + (totalComments > 0 ? totalComments : '评论') + '</span></button>' +
     '<button class="act" onclick="toast(\'转发是装饰功能 🙈\')">' +
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6M12 3v13m0-13L8 7m4-4 4 4"/></svg>' +
     '<span>转发</span></button>';
 
   foot.append(time, acts);
   card.appendChild(foot);
+
+  /* 评论区：预置评论 + 我的评论，全部平铺展示（始终展开，不要点击） */
+  card.appendChild(renderComments(p));
+
   return card;
 }
 
