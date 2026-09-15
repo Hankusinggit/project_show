@@ -31,7 +31,7 @@ body {
     "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
   line-height: 1.6;
-  background: radial-gradient(1200px 800px at 50% 0%, #33383f 0%, #191c20 55%, #101215 100%);
+  background: #ffffff;
   min-height: 100dvh;
   display: grid;
   overflow: hidden;
@@ -98,18 +98,13 @@ img { display: block; max-width: 100%; }
 .sb-icons { display: flex; align-items: center; gap: 5px; }
 .sb-icons b { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; }
 
-/* 前摄开孔（Mate 系列顶部居中三孔）—— z-index 最高 */
-.punch {
-  position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
-  z-index: 201; display: flex; gap: 7px; align-items: center;
+/* 顶部灵动岛（Dynamic Island 风格，居中黑色小药丸）—— z-index 最高 */
+.dynamic-island {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 201; width: 116px; height: 32px;
+  background: #0b0b0d; border-radius: 999px;
   pointer-events: none;
 }
-.punch i {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #0b0c0e;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.35), inset 0 0 2px rgba(80, 110, 160, 0.5);
-}
-.punch i.cam { width: 10px; height: 10px; }
 
 /* 机身下方标注 */
 .stage-caption {
@@ -123,7 +118,7 @@ img { display: block; max-width: 100%; }
 @media (max-width: 560px) {
   body { display: block; overflow: hidden; background: var(--page); }
   .phone { width: 100%; border-radius: 0; padding: 0; box-shadow: none; background: none; }
-  .hw-btn, .punch, .stage-caption { display: none; }
+  .hw-btn, .dynamic-island, .stage-caption { display: none; }
   .phone-screen { width: 100%; height: 100dvh; border-radius: 0; }
 }
 
@@ -131,7 +126,7 @@ img { display: block; max-width: 100%; }
 .app {
   width: 100%;
   min-height: 100%;
-  background: var(--page);
+  background: #ffffff;
 }
 
 /* ==========================================================================
@@ -200,12 +195,13 @@ img { display: block; max-width: 100%; }
 .icon-btn { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--ink-2); }
 .icon-btn:active { background: rgba(0, 0, 0, 0.05); }
 
-/* 说说卡片 */
+/* 说说卡片：去掉卡片样式，只保留细分割线区分 */
 .post {
-  margin: 12px; padding: 16px 16px 12px;
-  background: var(--card); border-radius: 14px;
-  box-shadow: var(--shadow);
+  margin: 0;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #EDEDED;
 }
+.post:last-child { border-bottom: none; }
 .p-head { display: flex; align-items: center; gap: 11px; }
 .avatar {
   width: 42px; height: 42px; border-radius: 50%;
@@ -527,7 +523,7 @@ img { display: block; max-width: 100%; }
   <div class="hw-btn hw-vol-down"></div>
   <div class="hw-btn hw-power"></div>
   <div class="phone-screen">
-    <div class="punch"><i></i><i class="cam"></i><i></i></div>
+    <div class="dynamic-island"></div>
     <div class="status-bar">
       <span id="sbTime">09:52</span>
       <span class="sb-icons">
