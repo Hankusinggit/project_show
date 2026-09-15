@@ -1,0 +1,37 @@
+// OCR 工具：用 macOS Vision 框架识别截图文字及其归一化位置
+// 用法: osascript -l JavaScript ocr.jxa <图片路径>
+// 输出: y=距顶部百分比 x=距左侧百分比 | 文字
+// 注意: 部分 macOS 版本中文识别语言模型不可用，届时可用于拉丁文字识别与元素坐标测量。
+ObjC.import('AppKit');
+ObjC.import('Vision');
+
+function run(argv) {
+  const url = $.NSURL.fileURLWithPath(argv[0]);
+  const handler = $.VNImageRequestHandler.alloc.initWithURLOptions(url, $.NSDictionary.dictionary);
+  const request = $.VNRecognizeTextRequest.alloc.init;
+  request.recognitionLevel = 1; // accurate
+  const langs = $.NSMutableArray.alloc.init;
+  langs.addObject($('zh-Hans'));
+  langs.addObject($('en-US'));
+  request.recognitionLanguages = langs;
+  request.usesLanguageCorrection = true;
+  const error = Ref();
+  const ok = handler.performRequestsError($.NSArray.arrayWithObject(request), error);
+  if (!ok) {
+    return 'OCR FAILED: ' + (error[0] ? String(error[0].localizedDescription) : 'unknown');
+  }
+  const results = request.results;
+  const out = [];
+  for (let i = 0; i < results.count; i++) {
+    const obs = results.objectAtIndex(i);
+    const cand = obs.topCandidates(1).objectAtIndex(0);
+    const bb = ObjC.unwrap(obs.boundingBox);
+    out.push({
+      top: (1 - bb.origin.y - bb.size.height) * 100,
+      left: bb.origin.x * 100,
+      text: cand.string.js
+    });
+  }
+  out.sort((a, b) => a.top - b.top || a.left - b.left);
+  return out.map(o => 'y=' + o.top.toFixed(1) + '% x=' + o.left.toFixed(1) + '% | ' + o.text).join('\n');
+}

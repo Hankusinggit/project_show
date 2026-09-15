@@ -1,0 +1,13 @@
+{
+  "name": "screenshot-analysis-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "截图分析工具链：布局色块 / 色彩剖面 / 区域取色 / OCR 文字定位",
+  "scripts": {
+    "grid": "node analyze.js grid",
+    "sample": "node analyze.js sample"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}
