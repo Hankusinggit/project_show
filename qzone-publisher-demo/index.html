@@ -594,8 +594,26 @@ img { display: block; max-width: 100%; }
 
 </div><!-- /screen-scroll -->
 
-<!-- ===================== 视图二：发布器（按真机截图对齐） ===================== -->
-<div class="pub-layer" id="pubLayer">
+<!-- ===================== 视图二：发布器（与浏览页解耦，HTML 由 JS 注入） ===================== -->
+<div class="pub-layer" id="pubLayer"></div>
+<div class="emo-panel" id="emoPanel"></div>
+<div class="mask" id="mask" onclick="closeSheet()"></div>
+<div class="sheet-wrap" id="sheetWrap"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toastEl"></div>
+
+  </div><!-- /phone-screen -->
+</div><!-- /phone -->
+
+<div class="stage-caption">QQ空间 · 发布器交互演示</div>
+
+<input type="file" id="fileInput" accept="image/*" multiple hidden />
+
+<script>
+/* ==========================================================================
+ * 发布器视图模板 —— 与浏览页完全解耦，由 JS 动态注入到 #pubLayer
+ * 改发布器只需改这一段模板字符串，不影响浏览页 HTML
+ * ========================================================================== */
+const PUB_VIEW_HTML = `
   <div class="pub-clip">
   <div class="pub-col">
     <div class="pub-top">
@@ -605,12 +623,9 @@ img { display: block; max-width: 100%; }
     </div>
 
     <div class="pub-scroll">
-      <!-- 卡1：编辑卡（输入 + 图片/视频入口 + 快捷入口） -->
       <div class="pub-card edit-card">
         <div class="editor is-empty" id="editor" contenteditable="true" data-ph="这一刻的想法…" spellcheck="false"></div>
-
         <div class="imgs" id="imgGrid"></div>
-
         <div class="media-area">
           <button class="photo-card" onclick="pickImages()" title="添加图片/视频">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.6" cy="9.6" r="1.7"/><path d="m6.5 17 4.2-4.6c.5-.5 1.2-.5 1.7 0l2 2.2m1.3-1.4 1.1-1.2c.5-.5 1.2-.5 1.7 0l1.7 1.9"/></svg>
@@ -633,7 +648,6 @@ img { display: block; max-width: 100%; }
         </div>
       </div>
 
-      <!-- 卡2：谁可以看 / 发表设置 -->
       <div class="pub-card opts-card">
         <div class="opt" onclick="openSheet('vis')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 15.2c1.5.7 2.6 2 3 4.8"/></svg>
@@ -647,7 +661,6 @@ img { display: block; max-width: 100%; }
         </div>
       </div>
 
-      <!-- 同步入口：两枚深色圆形按钮 -->
       <div class="sync-entries">
         <div class="sync-item" id="syncSig" onclick="toggleSync('signature')">
           <button class="sync-circle" aria-label="同步到个性签名">
@@ -662,37 +675,22 @@ img { display: block; max-width: 100%; }
           <span class="sync-label">朋友圈</span>
         </div>
       </div>
+    </div>
+  </div>
+  </div>
+`;
 
-    </div>  <!-- /pub-scroll -->
-  </div>  <!-- /pub-col -->
-</div>
-
-<!-- 表情面板 -->
-<div class="emo-panel" id="emoPanel">
+const EMO_PANEL_HTML = `
   <div class="emo-head"><span>表情</span><button onclick="toggleEmoji()">收起</button></div>
   <div class="emo-grid" id="emoGrid"></div>
-</div>
+`;
 
-<!-- 通用底部弹层 -->
-<div class="mask" id="mask" onclick="closeSheet()"></div>
-<div class="sheet-wrap" id="sheetWrap"><div class="sheet" id="sheet"></div></div>
-
-<div class="toast" id="toastEl"></div>
-
-  </div><!-- /phone-screen -->
-</div><!-- /phone -->
-
-<div class="stage-caption">QQ空间 · 发布器交互演示</div>
-
-<input type="file" id="fileInput" accept="image/*" multiple hidden />
-
-<script>
 /* ==========================================================================
  * 数据区 —— 想改假数据直接动这里
  * ========================================================================== */
 const DATA = {
   /* 头像已内嵌真实照片。想换人：把 img 的值改成你的图片地址；删掉 img 则退回渐变+emoji */
-  me: { name: 'hank-hmos-test', badge: 'Lv.242', visits: '242', avatar: { img: 'assets/avatar-me.jpg' } },
+  me: { name: 'Hank', badge: 'Lv.242', visits: '242', avatar: { img: 'assets/avatar-me.jpg' } },
 
   friends: [
     { name: '小林',   avatar: { img: 'assets/avatar-xiaolin.jpg' } },
@@ -778,7 +776,8 @@ const state = {
 };
 
 const $ = id => document.getElementById(id);
-const editor = $('editor');
+/* editor 是发布器的 contenteditable 元素，在视图注入后赋值 */
+let editor = null;
 
 function loadPosts() {
   try { return JSON.parse(localStorage.getItem(LS_POSTS)) || []; } catch { return []; }
@@ -1003,19 +1002,32 @@ function refreshState() {
 }
 
 let draftTimer = null;
-editor.addEventListener('input', () => {
-  editor.classList.toggle('is-empty', !getContentText());
-  refreshState();
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveDraft, 500);
-});
 
-/* 粘贴一律转纯文本，防止富文本污染 */
-editor.addEventListener('paste', e => {
-  e.preventDefault();
-  const t = (e.clipboardData || window.clipboardData).getData('text/plain');
-  document.execCommand('insertText', false, t);
-});
+/* 发布器事件绑定（在视图注入后调用，因为依赖注入后的 DOM 元素） */
+function initEditorEvents() {
+  editor.addEventListener('input', () => {
+    editor.classList.toggle('is-empty', !getContentText());
+    refreshState();
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 500);
+  });
+
+  editor.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+
+  /* 图片九宫格：删除走角标，添加走照片卡 */
+  $('imgGrid').addEventListener('click', e => {
+    const del = e.target.closest('.del');
+    if (!del) return;
+    state.images.splice(+del.dataset.i, 1);
+    renderImages();
+    refreshState();
+    saveDraftSoon();
+  });
+}
 
 function placeCaretEnd() {
   const r = document.createRange();
@@ -1045,17 +1057,8 @@ function escapeHtml(s) {
 }
 
 /* ==========================================================================
- * 发布器：图片
+ * 发布器：图片（事件绑定在 initEditorEvents 中，因为依赖注入后的 DOM）
  * ========================================================================== */
-/* 图片删除走九宫格角标；添加走「图片/视频」圆按钮 */
-$('imgGrid').addEventListener('click', e => {
-  const del = e.target.closest('.del');
-  if (!del) return;
-  state.images.splice(+del.dataset.i, 1);
-  renderImages();
-  refreshState();
-  saveDraftSoon();
-});
 
 $('fileInput').addEventListener('change', async e => {
   const files = [...e.target.files];
@@ -1332,7 +1335,6 @@ function resetDemo() {
 /* ========================================================================== * 初始化
  * ========================================================================== */
 renderFeed();
-buildEmojiGrid();
 $('meName').textContent = DATA.me.name;
 $('meBadge').textContent = DATA.me.badge;
 $('meSub').textContent = '访问总量 ' + DATA.me.visits;
@@ -1354,6 +1356,16 @@ function sbTick() {
 }
 sbTick();
 setInterval(sbTick, 30000);
+
+/* ========================================================================== * 发布器视图注入（解耦：HTML 由模板字符串动态渲染到空容器）
+ * ========================================================================== */
+$('pubLayer').innerHTML = PUB_VIEW_HTML;
+$('emoPanel').innerHTML = EMO_PANEL_HTML;
+
+/* 注入后才能引用发布器内部元素 */
+editor = $('editor');
+initEditorEvents();
+buildEmojiGrid();
 </script>
 </body>
 </html>
