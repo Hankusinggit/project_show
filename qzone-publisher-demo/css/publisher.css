@@ -1,0 +1,175 @@
+/* ==========================================================================
+   发布器（滑入页）—— 结构与尺寸按真机截图（56_42）逐项对齐
+   ========================================================================== */
+.pub-layer {
+  position: absolute; inset: 0; z-index: 40;
+  pointer-events: none;
+}
+/* 裁剪层：宽度和屏幕一致，收起时的位移才能真正移出可视区 */
+.pub-clip {
+  width: 100%; height: 100%;
+  position: relative; overflow: hidden;
+  pointer-events: none;
+}
+.pub-layer.open .pub-clip { pointer-events: auto; }
+.pub-col {
+  position: absolute; inset: 0;
+  background: var(--page);
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0.3, 1);
+  display: flex; flex-direction: column;
+}
+.pub-layer.open .pub-col { transform: translateX(0); }
+/* body.pub-open 已移除：body 本身已 overflow:hidden，且该规则会在窗口矮于机身时裁切外壳 */
+
+/* 顶栏：取消药丸 / 居中标题 / 发表药丸（实测 取消 31×33px、发表 63×33px） */
+.pub-top {
+  position: relative; flex: none;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 34px 16px 10px;             /* 顶部让出状态栏高度 */
+}
+.pub-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 16px; font-weight: 600; color: #3A3A44;
+}
+.pub-cancel {
+  padding: 6px 10px; border-radius: 999px;
+  background: #F0EFF4; color: #4E4E58; font-size: 14px;
+}
+.pub-cancel:active { background: #E7E6EB; }
+/* 「发表」按钮：始终保持蓝色药丸（与真机一致），空内容时文字变浅 */
+.pub-btn {
+  width: 64px; height: 33px; border-radius: 999px;
+  background: linear-gradient(180deg, #2CAAF5, #0098FA);
+  color: #fff; font-size: 15px; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 130, 250, 0.28);
+  transition: transform 0.15s, opacity 0.2s;
+}
+.pub-btn:active { transform: scale(0.94); }
+.pub-btn.dim { color: rgba(255, 255, 255, 0.55); }
+.pub-btn.busy { opacity: 0.6; pointer-events: none; }
+
+.pub-scroll { flex: 1; overflow-y: auto; padding-bottom: 44px; }
+
+/* 白卡片：编辑卡 / 选项卡（边距16px、圆角18px） */
+.pub-card {
+  margin: 4px 16px 0;
+  background: var(--card); border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+.edit-card { padding: 18px 20px 4px; }
+
+/* 输入区 */
+.editor { min-height: 90px; outline: none; font-size: 17px; line-height: 1.65; }
+.editor.is-empty::before {
+  content: attr(data-ph);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.editor .tag { color: var(--blue); }
+.editor .tag::selection { background: rgba(0, 153, 250, 0.25); }
+
+.char-count { text-align: right; font-size: 11px; color: var(--ink-3); padding: 4px 2px 10px; display: none; }
+
+/* 图片九宫格 */
+.imgs { display: grid; grid-template-columns: repeat(auto-fill, 92px); gap: 8px; padding: 2px 0 8px; }
+.img-tile { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; }
+.img-tile img { width: 100%; height: 100%; object-fit: cover; }
+.img-tile .del {
+  position: absolute; top: 5px; right: 5px; width: 20px; height: 20px;
+  border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff;
+  font-size: 13px; line-height: 20px; text-align: center;
+}
+
+/* 「图片/视频」+ 3 个快捷入口：照片卡在上（QQ 标准尺寸 76×96），快捷胶囊横排在下方 */
+.media-area { display: flex; flex-direction: column; gap: 14px; padding: 14px 0 18px; }
+.photo-card {
+  align-self: flex-start;
+  width: 84px; height: 84px;
+  background: var(--tile); border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: #909098;
+}
+.photo-card:active { background: #EAEAF0; }
+.photo-card svg { width: 26px; height: 26px; }
+.photo-cap { font-size: 11.5px; color: var(--ink-2); }
+
+/* 快捷入口行：3 个灰色气泡胶囊，水平排列（@好友 / 添加标签 / 添加地点），QQ 标准 8px 16px 内边距 */
+.quick-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.quick-row button {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #F5F5F5; color: var(--ink-2);
+  border-radius: 999px; padding: 8px 16px;
+  font-size: 13.5px; white-space: nowrap; height: 34px;
+  transition: background 0.15s;
+}
+.quick-row button svg { color: #8A8A92; }
+.quick-row button:active { background: #EAEAF0; }
+.quick-row button.set { background: #E5F3FE; color: var(--blue); }
+
+/* 选项卡：谁可以看 / 发表设置（两行，行高约58px） */
+.opts-card { margin-top: 16px; padding: 5px 0; }
+.opt {
+  display: flex; align-items: center; gap: 14px;
+  height: 58px; padding: 0 20px;
+  font-size: 15.5px; color: var(--ink);
+}
+.opt + .opt { border-top: 1px solid var(--line); }
+.opt svg { color: var(--ink-2); flex: none; }
+.opt-val { margin-left: auto; font-size: 14px; color: var(--ink-2); }
+.chev { margin-left: auto; color: var(--ink-3); font-size: 16px; }
+
+/* 同步入口：两枚深色圆形按钮 + 小字（按之前「空间说说整体展示」真机长截图还原） */
+.sync-entries { display: flex; gap: 30px; padding: 18px 22px 0; }
+.sync-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+.sync-circle {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #232329; color: #fff;
+  display: grid; place-items: center;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.sync-circle:active { transform: scale(0.92); }
+.sync-item.on .sync-circle { border-color: var(--blue); }
+.sync-label { font-size: 11px; color: var(--ink-2); }
+.sync-item.on .sync-label { color: var(--blue); }
+
+/* 发表设置弹层里的开关 */
+.switch {
+  margin-left: auto; width: 40px; height: 24px; border-radius: 999px;
+  background: #E3E3E9; position: relative; flex: none;
+  transition: background 0.2s;
+}
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 20px; height: 20px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: left 0.2s;
+}
+.switch.on { background: var(--blue); }
+.switch.on::after { left: 18px; }
+
+/* ==========================================================================
+   表情面板
+   ========================================================================== */
+.emo-panel {
+  position: absolute; bottom: 0; left: 0; z-index: 50;
+  width: 100%;
+  transform: translateY(105%);
+  transition: transform 0.25s cubic-bezier(0.32, 0.72, 0.3, 1);
+  background: var(--card); border-radius: 18px 18px 0 0;
+  padding: 12px 12px calc(14px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 30px rgba(30, 30, 60, 0.12);
+}
+.emo-panel.open { transform: translateY(0); }
+.emo-head { display: flex; align-items: center; padding: 0 8px 8px; }
+.emo-head span { font-size: 14px; font-weight: 600; }
+.emo-head button { margin-left: auto; font-size: 12px; color: var(--ink-3); padding: 4px 8px; }
+.emo-grid {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+  max-height: 218px; overflow-y: auto;
+}
+.emo-grid button { font-size: 24px; height: 40px; border-radius: 8px; }
+.emo-grid button:active { background: var(--tile); }
+

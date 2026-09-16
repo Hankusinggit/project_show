@@ -1,0 +1,181 @@
+/* ==========================================================================
+   动态页（外壳）—— 结构按「空间说说整体展示」截图对齐
+   ========================================================================== */
+
+/* 个人头部：柔和浅蓝渐变 + 白色云块 + 大头像（按鸿蒙真机效果对齐） */
+.qzone-head {
+  position: relative;
+  padding: 132px 16px 18px;        /* 头像上方留白（按真机截图比例换算） */
+  background: linear-gradient(
+    180deg,
+    #C9D3DF 0%,
+    #D3DFEF 22%,
+    #E2EDF9 48%,
+    #F4F9FF 74%,
+    #FFFFFF 100%
+  );
+  overflow: hidden;
+}
+.cloud { position: absolute; background: #FFFFFF; border-radius: 999px; }
+.cloud.c1 { width: 152px; height: 46px; top: 44px; right: -26px; opacity: 0.96; }
+.cloud.c2 { width: 104px; height: 36px; top: 96px; right: 54px; opacity: 0.92; }
+.cloud.c3 { width: 126px; height: 42px; top: 58px; left: -30px; opacity: 0.88; }
+
+.me-row { position: relative; display: flex; align-items: center; gap: 14px; }
+.me-ava {
+  width: 78px; height: 78px; font-size: 36px;
+  border: 2.5px solid #fff;
+  box-shadow: 0 4px 16px rgba(40, 70, 120, 0.16);
+}
+.me-ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.me-name { display: flex; align-items: center; gap: 7px; font-size: 19px; font-weight: 800; }
+.me-badge {
+  background: linear-gradient(180deg, #FFDB7E, #FFC53D);
+  color: #7A4B00; font-size: 11px; font-weight: 700;
+  padding: 1px 7px; border-radius: 5px; letter-spacing: 0.02em;
+}
+.me-sub { margin-top: 6px; font-size: 12.5px; color: var(--ink-2); }
+
+/* 五个功能入口：图标在上、小字在下，底部一条分隔线 */
+.quick-nav {
+  display: flex; justify-content: space-around;
+  padding: 14px 6px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.qn { display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 50px; }
+.qn svg { color: #585860; }
+.qn span { font-size: 12px; color: #585860; }
+.qn:active { opacity: 0.55; }
+
+/* 「分享新鲜事...」发布入口（浅灰圆角输入条） */
+.composer {
+  display: flex; align-items: center; gap: 10px;
+  margin: 12px 16px 0; padding: 11px 14px;
+  background: #F5F5F5; border-radius: 12px;
+  cursor: pointer;
+}
+.composer .ph { flex: 1; font-size: 14px; color: var(--ink-3); }
+.composer svg { color: var(--ink-2); flex: none; }
+.composer:active { background: #EFEFF3; }
+
+/* 「好友动态」标题行 —— 背景从屏幕顶端(0px)开始整块覆盖（把状态栏区域也遮住），
+   但灵动岛(z-index:201)和状态栏(z-index:200)层级更高，始终浮在 header 之上不受影响。
+   整个容器 opacity 跟随 scrollTop 线性插值。 */
+.feed-title {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  padding: 50px 16px 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #EDEDF0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s linear;
+}
+.feed-title h2 { font-size: 17px; font-weight: 800; }
+
+/* 说说卡片：去掉卡片样式，只保留细分割线区分 */
+.post {
+  margin: 0;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #EDEDED;
+}
+.post:last-child { border-bottom: none; }
+.p-head { display: flex; align-items: center; gap: 11px; }
+.avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 20px; flex: none; user-select: none;
+  overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.p-meta { flex: 1; min-width: 0; }
+.p-name { font-size: 15px; font-weight: 700; }
+.p-more { color: var(--ink-3); font-weight: 700; padding: 2px 8px; font-size: 16px; }
+
+.p-body { font-size: 15.5px; line-height: 1.62; margin-top: 11px; word-break: break-word; white-space: pre-wrap; }
+.tag { color: var(--blue); }
+.p-loc { margin-top: 7px; font-size: 12px; color: var(--ink-2); }
+
+.p-imgs { margin-top: 11px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.p-imgs.single { grid-template-columns: minmax(0, 62%); }
+.p-imgs.wide { grid-template-columns: 1fr; }
+.ph-img, .p-imgs img {
+  aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+  display: grid; place-items: center; font-size: 30px;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.p-imgs.wide .ph-img, .p-imgs.wide img { aspect-ratio: 16 / 9.5; font-size: 44px; border-radius: 12px; }
+.p-imgs img { display: block; }
+
+/* 赞过的好友预览条 */
+.p-likes {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 11px; padding: 8px 10px;
+  background: #F7F7FA; border-radius: 10px;
+  font-size: 12px; color: var(--ink-2);
+}
+.p-likes .avatar { width: 18px; height: 18px; font-size: 10px; }
+
+/* 评论区：评论列表 + 评论输入框 */
+.p-comments { margin-top: 10px; }
+.p-comment-list { display: flex; flex-direction: column; gap: 9px; }
+.p-comment { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
+.p-comment .avatar { flex: none; width: 28px; height: 28px; font-size: 12px; }
+.p-comment-text { flex: 1; min-width: 0; color: var(--ink); }
+.p-comment-name { font-weight: 700; margin-right: 6px; color: var(--ink); }
+.p-comment-time { font-size: 11px; color: var(--ink-3); margin-left: 6px; }
+.p-comment-input {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 8px 12px;
+  background: #F5F5F5; border-radius: 10px;
+}
+.p-comment-input .avatar { flex: none; width: 28px; height: 28px; font-size: 12px; }
+.p-comment-input input {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font-size: 14px; color: var(--ink); padding: 4px 0;
+}
+.p-comment-input input::placeholder { color: var(--ink-3); }
+.p-comment-input button {
+  flex: none; background: var(--blue); color: #fff;
+  border-radius: 999px; padding: 5px 14px;
+  font-size: 12.5px; font-weight: 600;
+}
+.p-comment-input button:disabled { background: #D8DCE3; cursor: default; }
+
+/* 卡片底部：时间居左，操作居右（按真机样式） */
+.p-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.p-time { font-size: 12px; color: var(--ink-2); }
+.p-foot .p-time { margin-top: 0; }
+.p-acts { display: flex; align-items: center; gap: 18px; flex-shrink: 0; white-space: nowrap; }
+.act {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--ink-2); font-size: 13px; padding: 4px 0;
+  flex: none;
+}
+.act:active { opacity: 0.55; }
+.act.liked { color: #F06060; }
+.act svg { flex: none; }
+
+/* 「发表说说」CTA（对应截图中的蓝色按钮卡片） */
+.pub-cta {
+  margin: 20px auto 6px;
+  width: min(250px, 82%);
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px 14px 12px; text-align: center;
+  box-shadow: var(--shadow);
+}
+.pub-cta-btn {
+  display: block; width: 100%; padding: 10px 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #2CAAF5, #0098FA);
+  color: #fff; font-size: 15px; font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0, 130, 250, 0.3);
+  transition: transform 0.15s;
+}
+.pub-cta-btn:active { transform: scale(0.97); }
+.pub-cta .hint { margin-top: 8px; font-size: 11px; color: var(--ink-3); }
+
+.feed-foot { padding: 6px 0 28px; text-align: center; }
+.feed-foot button { font-size: 12px; color: var(--ink-3); padding: 6px 12px; }
+.feed-foot button:active { color: var(--ink-2); }
+

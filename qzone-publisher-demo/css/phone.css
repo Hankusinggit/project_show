@@ -1,0 +1,89 @@
+/* ==========================================================================
+   手机外壳（华为 Mate 风格）：大曲率圆角 + 金属边框 + 侧键 + 三孔前摄
+   内容渲染在机身屏幕内，滚动发生在屏幕内部
+   ========================================================================== */
+.phone {
+  position: relative;
+  width: 424px;                       /* 屏幕 400 + 边框 12×2 */
+  margin: auto;                       /* 网格容器中安全居中：窗口矮于机身时自动退回对齐而非裁切 */
+  border-radius: 58px;
+  padding: 12px;
+  background: linear-gradient(150deg, #43474d 0%, #232529 28%, #17181b 55%, #2e3136 100%);
+  box-shadow:
+    0 40px 90px rgba(0, 0, 0, 0.55),
+    0 10px 26px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+/* 侧键：右侧音量 ×2 + 电源（Mate 经典红圈点缀） */
+.hw-btn {
+  position: absolute; right: -3.5px; width: 3.5px;
+  background: linear-gradient(180deg, #4a4e54, #212327);
+  border-radius: 0 3px 3px 0;
+}
+.hw-vol-up   { top: 168px; height: 46px; }
+.hw-vol-down { top: 222px; height: 46px; }
+.hw-power    { top: 300px; height: 66px; box-shadow: inset -1.5px 0 0 rgba(205, 45, 45, 0.9); }
+
+.phone-screen {
+  position: relative;
+  width: 400px;
+  height: min(872px, calc(100dvh - 64px));
+  border-radius: 46px;
+  overflow: hidden;
+  background: var(--page);
+  isolation: isolate;      /* 新建层叠上下文，防止 z-index 泄漏到机身外 */
+}
+
+/* 滚动容器：内容在此滚动，覆盖层锚定在屏幕内不随滚动 */
+.screen-scroll {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+/* 状态栏（悬浮屏幕顶部，真实时间）—— z-index 提到最高，确保永远可见 */
+.status-bar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 26px 5px;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  pointer-events: none;
+}
+.sb-icons { display: flex; align-items: center; gap: 5px; }
+.sb-icons b { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; }
+
+/* 顶部灵动岛（Dynamic Island 风格，居中黑色小药丸）—— z-index 最高 */
+.dynamic-island {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 201; width: 116px; height: 32px;
+  background: #0b0b0d; border-radius: 999px;
+  pointer-events: none;
+}
+
+/* 机身下方标注 */
+.stage-caption {
+  position: fixed; bottom: 14px; left: 0; right: 0;
+  text-align: center; font-size: 12px;
+  color: rgba(255, 255, 255, 0.34);
+  letter-spacing: 0.08em; pointer-events: none;
+}
+
+/* 真机访问：自动脱壳全屏 */
+@media (max-width: 560px) {
+  body { display: block; overflow: hidden; background: var(--page); }
+  .phone { width: 100%; border-radius: 0; padding: 0; box-shadow: none; background: none; }
+  .hw-btn, .dynamic-island, .stage-caption { display: none; }
+  .phone-screen { width: 100%; height: 100dvh; border-radius: 0; }
+}
+
+/* 应用列：铺满手机屏幕 */
+.app {
+  width: 100%;
+  min-height: 100%;
+  background: #ffffff;
+}
+

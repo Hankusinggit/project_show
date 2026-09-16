@@ -1,0 +1,34 @@
+/* ==========================================================================
+   设计令牌 —— 色值取自真机截图采样
+   ========================================================================== */
+:root {
+  --blue: #0099FA;        /* 品牌蓝（真机发表按钮渐变均值） */
+  --blue-press: #0089E0;
+  --page: #F4F3F8;        /* 页面浅灰底（真机采样值） */
+  --card: #FFFFFF;
+  --ink: #1A1A1E;         /* 主文字 */
+  --ink-2: #8A8A92;       /* 次要文字 */
+  --ink-3: #B4B4BC;       /* 占位/三级文字 */
+  --line: #EFEFF3;        /* 分隔线 */
+  --tile: #F5F5F8;        /* 加号瓦片底 */
+  --shadow: 0 4px 20px rgba(30, 30, 60, 0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC",
+    "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  line-height: 1.6;
+  background: #ffffff;
+  min-height: 100dvh;
+  display: grid;
+  overflow: hidden;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+img { display: block; max-width: 100%; }
+
