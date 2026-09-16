@@ -811,7 +811,6 @@ const DATA = {
 /* ==========================================================================
  * 状态与存储
  * ========================================================================== */
-const LS_POSTS = 'qzone_demo_posts_v1';
 const LS_DRAFT = 'qzone_demo_draft_v1';
 
 const state = {
@@ -827,11 +826,13 @@ const $ = id => document.getElementById(id);
 /* editor 是发布器的 contenteditable 元素，在视图注入后赋值 */
 let editor = null;
 
+/* 已发布的说说存内存（刷新即消失，不再持久化到 localStorage） */
+let _memPosts = [];
 function loadPosts() {
-  try { return JSON.parse(localStorage.getItem(LS_POSTS)) || []; } catch { return []; }
+  return _memPosts;
 }
 function savePosts(p) {
-  try { localStorage.setItem(LS_POSTS, JSON.stringify(p)); } catch (e) { console.warn(e); }
+  _memPosts = p;
 }
 function loadDraft() {
   try { return JSON.parse(localStorage.getItem(LS_DRAFT)); } catch { return null; }
@@ -984,9 +985,8 @@ function postCard(p) {
     card.appendChild(loc);
   }
 
-  const imgs = p.mine ? p.images : null;
-  const phs = !p.mine ? p.ph : null;
-  const list = imgs && imgs.length ? imgs : (phs || []);
+  /* 配图统一：优先 p.images（发布器新发布），否则 p.ph（seedPosts 占位），不再看 mine */
+  const list = (p.images && p.images.length) ? p.images : (p.ph || []);
   if (list.length) {
     const g = document.createElement('div');
     const solo = list.length === 1;
@@ -1043,8 +1043,8 @@ function postCard(p) {
   foot.className = 'p-foot';
   const time = document.createElement('span');
   time.className = 'p-time';
-  let t = p.mine ? fmtTime(p.time) : p.time;
-  if (p.mine) t += ' · ' + (DATA.visibilities.find(v => v.id === p.visibility) || DATA.visibilities[0]).label;
+  /* 时间统一显示：seedPosts 的字符串直接用，发布器新发布的时间戳走 fmtTime */
+  const t = typeof p.time === 'string' ? p.time : fmtTime(p.time);
   time.textContent = t;
 
   const acts = document.createElement('div');
@@ -1470,8 +1470,10 @@ function toast(msg) {
 
 function resetDemo() {
   if (!confirm('清空已发表的说说和草稿，恢复初始演示数据？')) return;
-  try { localStorage.removeItem(LS_POSTS); localStorage.removeItem(LS_DRAFT); } catch (e) {}
+  _memPosts = [];
+  clearDraft();
   state.liked.clear();
+  state.myComments = {};
   renderFeed();
   toast('已重置 ✅');
 }
