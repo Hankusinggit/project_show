@@ -142,16 +142,25 @@ function postCard(p) {
     const solo = list.length === 1;
     const wide = solo && typeof list[0] === 'object' && list[0].wide;
     g.className = 'p-imgs' + (wide ? ' wide' : solo ? ' single' : '');
+
+    /* 收集所有媒体 URL，传给 Gallery 查看器 */
+    const mediaUrls = [];
     list.forEach(item => {
       if (typeof item === 'string') {
+        mediaUrls.push(item);
         const img = document.createElement('img');
         img.src = item;
         img.alt = '';
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', () => openViewer(mediaUrls, mediaUrls.indexOf(item)));
         g.appendChild(img);
       } else if (item.img) {
+        mediaUrls.push(item.img);
         const im = document.createElement('img');
         im.src = item.img;
         im.alt = '';
+        im.style.cursor = 'zoom-in';
+        im.addEventListener('click', () => openViewer(mediaUrls, mediaUrls.indexOf(item.img)));
         g.appendChild(im);
       } else {
         const d = document.createElement('div');

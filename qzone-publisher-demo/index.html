@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="css/feed.css">
 <link rel="stylesheet" href="css/publisher.css">
 <link rel="stylesheet" href="css/sheet.css">
+<link rel="stylesheet" href="css/gallery.css">
 </head>
 <body>
 
@@ -95,6 +96,13 @@
 <div class="sheet-wrap" id="sheetWrap"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toastEl"></div>
 
+<!-- Gallery 全屏媒体查看器 -->
+<div class="viewer" id="viewer">
+  <button class="viewer-close" id="viewerClose">×</button>
+  <div class="viewer-counter" id="viewerCounter">1/1</div>
+  <div class="viewer-track" id="viewerTrack"></div>
+</div>
+
   </div><!-- /phone-screen -->
 </div><!-- /phone -->
 
@@ -107,6 +115,7 @@
 <script src="js/feed.js"></script>
 <script src="js/sheet.js"></script>
 <script src="js/publisher.js"></script>
+<script src="js/gallery.js"></script>
 <script>
 /* ==========================================================================
  * 工具
