@@ -503,20 +503,27 @@ img { display: block; max-width: 100%; }
 .sheet {
   width: 100%;
   background: var(--card); border-radius: 18px 18px 0 0;
-  padding: 8px 0 20px;
-  max-height: 68vh; overflow-y: auto;
+  padding: 8px 0 calc(20px + env(safe-area-inset-bottom));
+  max-height: 80vh; overflow-y: auto;
   transform: translateY(105%);
   transition: transform 0.28s cubic-bezier(0.32, 0.72, 0.3, 1);
   pointer-events: auto;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
 }
 .sheet-wrap.show .sheet { transform: translateY(0); }
 .sh-handle { width: 36px; height: 4.5px; border-radius: 3px; background: #DDDDE4; margin: 6px auto 8px; }
-.sh-title { text-align: center; font-size: 15px; font-weight: 700; padding: 4px 0 8px; }
+.sh-title { text-align: center; font-size: 14px; font-weight: 400; color: var(--ink-3); padding: 8px 0 14px; }
 .sh-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 22px; font-size: 15.5px;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 14px 22px; font-size: 15.5px;
+  background: transparent; border: none; color: var(--ink);
+  cursor: pointer;
 }
 .sh-row:active { background: var(--tile); }
+.sh-row.danger { color: #FA5151; }
+.sh-sep {
+  height: 1px; background: #EDEDF0; margin: 4px 0;
+}
 .sh-row .avatar { width: 38px; height: 38px; font-size: 18px; }
 .sh-sub { font-size: 12px; color: var(--ink-3); }
 .radio {
@@ -1135,29 +1142,34 @@ function openDraftSheet() {
   title.textContent = '是否保存草稿？';
   s.appendChild(title);
 
-  const mk = (label, sub, fn) => {
+  const mk = (label, fn, variant) => {
     const btn = document.createElement('button');
-    btn.className = 'sh-row';
-    btn.innerHTML = '<div><div>' + label + '</div>' + (sub ? '<div class="sh-sub">' + sub + '</div>' : '') + '</div>';
+    btn.className = 'sh-row' + (variant ? ' ' + variant : '');
+    btn.innerHTML = '<div>' + label + '</div>';
     btn.onclick = fn;
     s.appendChild(btn);
   };
+  const sep = () => { const s1 = document.createElement('div'); s1.className = 'sh-sep'; s.appendChild(s1); };
 
-  mk('保存草稿', '下次进入发布器自动恢复', () => {
+  mk('保存草稿', () => {
     saveDraft();
     resetEditor();
     closeSheet();
     closePublisher();
   });
 
-  mk('不保存', '丢弃当前内容', () => {
+  sep();
+
+  mk('不保存', () => {
     clearDraft();
     resetEditor();
     closeSheet();
     closePublisher();
-  });
+  }, 'danger');
 
-  mk('取消', '继续编辑', () => {
+  sep();
+
+  mk('取消', () => {
     closeSheet();
   });
 
