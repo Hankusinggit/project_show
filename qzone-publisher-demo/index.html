@@ -1116,11 +1116,53 @@ function closePublisher() {
 
 function cancelPublish() {
   if (getContentText() || state.images.length) {
-    if (!confirm('放弃编辑这条说说吗？')) return;
+    openDraftSheet();
+  } else {
+    closePublisher();
+  }
+}
+
+/* 「是否保存草稿」底部弹层：保存 / 不保存 / 取消 */
+function openDraftSheet() {
+  const s = $('sheet');
+  s.innerHTML = '';
+
+  const handle = document.createElement('div');
+  handle.className = 'sh-handle';
+  s.appendChild(handle);
+  const title = document.createElement('div');
+  title.className = 'sh-title';
+  title.textContent = '是否保存草稿？';
+  s.appendChild(title);
+
+  const mk = (label, sub, fn) => {
+    const btn = document.createElement('button');
+    btn.className = 'sh-row';
+    btn.innerHTML = '<div><div>' + label + '</div>' + (sub ? '<div class="sh-sub">' + sub + '</div>' : '') + '</div>';
+    btn.onclick = fn;
+    s.appendChild(btn);
+  };
+
+  mk('保存草稿', '下次进入发布器自动恢复', () => {
+    saveDraft();
+    resetEditor();
+    closeSheet();
+    closePublisher();
+  });
+
+  mk('不保存', '丢弃当前内容', () => {
     clearDraft();
     resetEditor();
-  }
-  closePublisher();
+    closeSheet();
+    closePublisher();
+  });
+
+  mk('取消', '继续编辑', () => {
+    closeSheet();
+  });
+
+  $('mask').classList.add('show');
+  $('sheetWrap').classList.add('show');
 }
 
 function resetEditor() {
@@ -1145,15 +1187,11 @@ function refreshState() {
   $('pubBtn').classList.toggle('dim', !has);
 }
 
-let draftTimer = null;
-
 /* 发布器事件绑定（在视图注入后调用，因为依赖注入后的 DOM 元素） */
 function initEditorEvents() {
   editor.addEventListener('input', () => {
     editor.classList.toggle('is-empty', !getContentText());
     refreshState();
-    clearTimeout(draftTimer);
-    draftTimer = setTimeout(saveDraft, 500);
   });
 
   editor.addEventListener('paste', e => {
@@ -1169,7 +1207,6 @@ function initEditorEvents() {
     state.images.splice(+del.dataset.i, 1);
     renderImages();
     refreshState();
-    saveDraftSoon();
   });
 }
 
@@ -1192,8 +1229,6 @@ function insertHTML(html) {
   document.execCommand('insertHTML', false, html);
   editor.classList.remove('is-empty');
   refreshState();
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveDraft, 500);
 }
 
 function escapeHtml(s) {
@@ -1214,8 +1249,6 @@ $('fileInput').addEventListener('change', async e => {
   }
   renderImages();
   refreshState();
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveDraft, 500);
 });
 
 function renderImages() {
@@ -1254,7 +1287,10 @@ function compressImage(file) {
  * ========================================================================== */
 function restoreDraftIfAny() {
   const d = loadDraft();
-  if (d && (d.html || (d.images && d.images.length))) {
+  if (!d) return;
+  const hasText = d.html && d.html.replace(/<[^>]*>/g, '').trim().length > 0;
+  const hasImages = d.images && d.images.length > 0;
+  if (hasText || hasImages) {
     editor.innerHTML = d.html || '';
     editor.classList.toggle('is-empty', !getContentText());
     state.images = (d.images || []).map(u => ({ url: u, dataUrl: u }));
@@ -1264,8 +1300,9 @@ function restoreDraftIfAny() {
     updateVisLabel();
     updateLocVal();
     refreshState();
-    toast('已恢复上次的草稿 ✏️');
   }
+  /* 恢复完成即清除：草稿是一次性的，下次进入是干净状态 */
+  clearDraft();
 }
 
 /* ==========================================================================
@@ -1377,16 +1414,16 @@ function openSheet(kind) {
       row(
         '<div><div>' + v.label + '</div><div class="sh-sub">' + v.sub + '</div></div>' +
         '<span class="radio' + (state.visibility === v.id ? ' on' : '') + '"></span>',
-        () => { state.visibility = v.id; updateVisLabel(); saveDraftSoon(); closeSheet(); }
+        () => { state.visibility = v.id; updateVisLabel(); closeSheet(); }
       );
     });
   }
 
   if (kind === 'loc') {
     title.textContent = '所在位置';
-    row('<span>📍 不显示位置</span>', () => { state.location = null; updateLocVal(); saveDraftSoon(); closeSheet(); });
+    row('<span>📍 不显示位置</span>', () => { state.location = null; updateLocVal(); closeSheet(); });
     DATA.locations.forEach(l => {
-      row('<span>📍 ' + l + '</span>', () => { state.location = l; updateLocVal(); saveDraftSoon(); closeSheet(); });
+      row('<span>📍 ' + l + '</span>', () => { state.location = l; updateLocVal(); closeSheet(); });
     });
   }
 
@@ -1453,8 +1490,6 @@ function closeSheet() {
   $('mask').classList.remove('show');
   $('sheetWrap').classList.remove('show');
 }
-
-function saveDraftSoon() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 300); }
 
 /* ==========================================================================
  * 工具
