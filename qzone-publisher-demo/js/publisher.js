@@ -22,15 +22,14 @@ const PUB_VIEW_HTML = `
           </button>
           <div class="quick-row">
             <button onclick="openSheet('at')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5c.8-3.5 3.6-5.5 7.5-5.5s6.7 2 7.5 5.5"/></svg>
               @好友
             </button>
             <button onclick="openSheet('topic')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 9h14M5 13h10M5 17h7"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 9h14M5 13h10M5 17h7"/></svg>
               添加标签
             </button>
             <button id="locEntry" onclick="openSheet('loc')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
               添加地点
             </button>
           </div>
@@ -38,12 +37,12 @@ const PUB_VIEW_HTML = `
       </div>
 
       <div class="pub-card opts-card">
-        <div class="opt" onclick="openSheet('vis')">
+        <div class="opt" onclick="showSubpage('vis')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 15.2c1.5.7 2.6 2 3 4.8"/></svg>
           <span>谁可以看</span>
           <span class="opt-val" id="visLabel">所有人可见</span>
         </div>
-        <div class="opt" onclick="openSheet('settings')">
+        <div class="opt" onclick="showSubpage('settings')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95A7 7 0 0 0 14 5.1L13.7 2.6h-3.4L10 5.1a7 7 0 0 0-2.5 1.44l-2.36-.95-2 3.46 2 1.55A7 7 0 0 0 5 12c0 .48.05.94.14 1.4l-2 1.55 2 3.46 2.36-.95A7 7 0 0 0 10 18.9l.3 2.5h3.4l.3-2.5a7 7 0 0 0 2.5-1.44l2.36.95 2-3.46-2-1.55c.09-.46.14-.92.14-1.4z"/></svg>
           <span>发表设置</span>
           <span class="chev">›</span>
@@ -53,15 +52,13 @@ const PUB_VIEW_HTML = `
       <div class="sync-entries">
         <div class="sync-item" id="syncSig" onclick="toggleSync('signature')">
           <button class="sync-circle" aria-label="同步到个性签名">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5 19.5 9.5 9 20H4v-5z"/><path d="m12.5 6.5 5 5"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M21.395 15.035a40 40 0 0 0-.803-2.264l-1.079-2.695c.001-.032.014-.562.014-.836C19.526 4.632 17.351 0 12 0S4.474 4.632 4.474 9.241c0 .274.013.804.014.836l-1.08 2.695a39 39 0 0 0-.802 2.264c-1.021 3.283-.69 4.643-.438 4.673.54.065 2.103-2.472 2.103-2.472 0 1.469.756 3.387 2.394 4.771-.612.188-1.363.479-1.845.835-.434.32-.379.646-.301.778.343.578 5.883.369 7.482.189 1.6.18 7.14.389 7.483-.189.078-.132.132-.458-.301-.778-.483-.356-1.233-.646-1.846-.836 1.637-1.384 2.393-3.302 2.393-4.771 0 0 1.563 2.537 2.103 2.472.251-.03.581-1.39-.438-4.673"/></svg>
           </button>
-          <span class="sync-label">个性签名</span>
         </div>
         <div class="sync-item" id="syncMoments" onclick="toggleSync('moments')">
           <button class="sync-circle" aria-label="同步到微信朋友圈">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17" opacity=".45"/><circle cx="12" cy="12" r="2.6"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="m14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94"/></svg>
           </button>
-          <span class="sync-label">朋友圈</span>
         </div>
       </div>
     </div>
@@ -364,3 +361,143 @@ function toggleSync(which) {
     ? (which === 'signature' ? '将同步到个性签名 ✓（演示）' : '将同步到微信朋友圈 ✓（演示）')
     : '已取消同步');
 }
+
+/* ==========================================================================
+ * 全屏子页面：谁可以看 / 发表设置
+ * ========================================================================== */
+
+/* 子页面状态：发表设置开关 */
+const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false };
+
+function showSubpage(kind) {
+  /* 如果子页面容器不存在，先创建 */
+  let sub = document.getElementById('pubSubpage');
+  if (!sub) {
+    sub = document.createElement('div');
+    sub.className = 'pub-subpage';
+    sub.id = 'pubSubpage';
+    document.querySelector('.pub-layer').appendChild(sub);
+  }
+
+  if (kind === 'vis') {
+    sub.innerHTML = buildVisPage();
+  } else if (kind === 'settings') {
+    sub.innerHTML = buildSettingsPage();
+  }
+
+  /* 绑定返回箭头 */
+  sub.querySelector('.sub-back').addEventListener('click', hideSubpage);
+
+  /* 触发滑入动画 */
+  requestAnimationFrame(() => sub.classList.add('show'));
+}
+
+function hideSubpage() {
+  const sub = document.getElementById('pubSubpage');
+  if (!sub) return;
+  sub.classList.remove('show');
+}
+
+/* 谁可以看页面（按截图：标题「谁能看见」+ 完成按钮 + 5 个选项 + 部分好友/不给谁看 右侧带 chevron） */
+function buildVisPage() {
+  /* 5 个选项：前 3 个直接选中状态，后 2 个有 chevron 跳转到二级选择 */
+  const items = [
+    { id: 'public',  label: '所有人', check: true },
+    { id: 'friends', label: 'QQ好友', check: false },
+    { id: 'private', label: '私密',   check: false },
+    { id: 'partial', label: '部分好友', check: false, chevron: true },
+    { id: 'forbid',  label: '不给谁看', check: false, chevron: true },
+  ];
+  const rows = items.map(it => {
+    const checked = state.visibility === it.id;
+    return `
+    <div class="sub-list-row${it.chevron ? ' has-chev' : ''}" data-id="${it.id}">
+      ${checked ? '<svg class="sub-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 12 10 17 19 7"/></svg>' : '<span class="sub-check-spacer"></span>'}
+      <span class="sub-list-label">${it.label}</span>
+      ${it.chevron ? '<span class="sub-chev">›</span>' : ''}
+    </div>
+  `;
+  }).join('');
+
+  return `
+    <div class="pub-subhead">
+      <button class="sub-back">‹</button>
+      <h3>谁能看见</h3>
+      <button class="sub-done">完成</button>
+    </div>
+    <div class="pub-subbody">
+      <div class="sub-list">${rows}</div>
+    </div>
+  `;
+}
+
+/* 发表设置页面（按截图：定时发表+自动删除 在同一张卡里，
+   AI 声明 独立一张卡，下面带灰色描述） */
+function buildSettingsPage() {
+  /* 第一张卡：定时发表 + 发表24小时自动删除（共享一张卡，中间分割线） */
+  const card1 = `
+    <div class="sub-group">
+      <div class="sub-switch-row" data-key="scheduled">
+        <svg class="sub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+        <span class="label">定时发表</span>
+        <span class="switch${pubSettings.scheduled ? ' on' : ''}"></span>
+      </div>
+      <div class="sub-switch-row" data-key="autoDelete">
+        <svg class="sub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+        <span class="label">发表24小时后自动删除</span>
+        <span class="switch${pubSettings.autoDelete ? ' on' : ''}"></span>
+      </div>
+    </div>
+  `;
+
+  /* 第二张卡：AI 声明（独立卡 + 下方描述） */
+  const card2 = `
+    <div class="sub-group">
+      <div class="sub-switch-row" data-key="aiDeclare">
+        <svg class="sub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2l4 1.5 1 4 2-1 2 1 1-4 4-1.5v-2l-4-1.5-1-4-2 1-2-1-1 4z"/><path d="M16 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg>
+        <span class="label">声明内容含AI生成</span>
+        <span class="switch${pubSettings.aiDeclare ? ' on' : ''}"></span>
+      </div>
+    </div>
+    <div class="sub-desc">发表AI相关的内容，可进行自主声明，便于他人区分虚拟内容和真实内容。</div>
+  `;
+
+  return `
+    <div class="pub-subhead">
+      <button class="sub-back">‹</button>
+      <h3>发表设置</h3>
+    </div>
+    <div class="pub-subbody">
+      ${card1}
+      ${card2}
+    </div>
+  `;
+}
+
+/* 子页面事件委托：点击选项行切换可见性 / 点击开关行切换设置 */
+document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', e => {
+    /* 完成按钮：返回主页 */
+    if (e.target.closest('.sub-done')) {
+      hideSubpage();
+      return;
+    }
+    /* 谁可以看：点击选项行 */
+    const visRow = e.target.closest('.sub-list-row[data-id]');
+    if (visRow) {
+      state.visibility = visRow.dataset.id;
+      updateVisLabel();
+      hideSubpage();
+      return;
+    }
+    /* 发表设置：点击开关行 */
+    const swRow = e.target.closest('.sub-switch-row[data-key]');
+    if (swRow) {
+      const key = swRow.dataset.key;
+      pubSettings[key] = !pubSettings[key];
+      const sw = swRow.querySelector('.switch');
+      if (sw) sw.classList.toggle('on');
+      return;
+    }
+  });
+});

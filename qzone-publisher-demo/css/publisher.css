@@ -82,27 +82,27 @@
 }
 
 /* 「图片/视频」+ 3 个快捷入口：照片卡在上（QQ 标准尺寸 76×96），快捷胶囊横排在下方 */
-.media-area { display: flex; flex-direction: column; gap: 14px; padding: 14px 0 18px; }
+.media-area { display: flex; flex-direction: column; gap: 18px; padding: 18px 8px 18px; }
 .photo-card {
   align-self: flex-start;
-  width: 84px; height: 84px;
-  background: var(--tile); border-radius: 12px;
+  width: 100px; height: 100px;
+  background: var(--tile); border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   color: #909098;
 }
 .photo-card:active { background: #EAEAF0; }
-.photo-card svg { width: 26px; height: 26px; }
-.photo-cap { font-size: 11.5px; color: var(--ink-2); }
+.photo-card svg { width: 30px; height: 30px; }
+.photo-cap { font-size: 12.5px; color: var(--ink-2); }
 
-/* 快捷入口行：3 个灰色气泡胶囊，水平排列（@好友 / 添加标签 / 添加地点），QQ 标准 8px 16px 内边距 */
+/* 快捷入口行：3 个灰色气泡胶囊，水平排列（@好友 / 添加标签 / 添加地点） */
 .quick-row {
-  display: flex; gap: 10px; flex-wrap: wrap;
+  display: flex; gap: 4px; flex-wrap: wrap;
 }
 .quick-row button {
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 3px;
   background: #F5F5F5; color: var(--ink-2);
-  border-radius: 999px; padding: 8px 16px;
-  font-size: 13.5px; white-space: nowrap; height: 34px;
+  border-radius: 999px; padding: 3px 8px;
+  font-size: 11.5px; white-space: nowrap; height: 22px;
   transition: background 0.15s;
 }
 .quick-row button svg { color: #8A8A92; }
@@ -121,19 +121,19 @@
 .opt-val { margin-left: auto; font-size: 14px; color: var(--ink-2); }
 .chev { margin-left: auto; color: var(--ink-3); font-size: 16px; }
 
-/* 同步入口：两枚深色圆形按钮 + 小字（按之前「空间说说整体展示」真机长截图还原） */
-.sync-entries { display: flex; gap: 30px; padding: 18px 22px 0; }
-.sync-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+/* 同步入口：两枚深色圆形按钮 + 小字（左对齐） */
+.sync-entries { display: flex; gap: 0; padding: 6px 20px 10px; }
+.sync-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
 .sync-circle {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: #232329; color: #fff;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: transparent; color: var(--ink);
   display: grid; place-items: center;
   border: 2px solid transparent;
   transition: border-color 0.2s, transform 0.15s;
 }
 .sync-circle:active { transform: scale(0.92); }
 .sync-item.on .sync-circle { border-color: var(--blue); }
-.sync-label { font-size: 11px; color: var(--ink-2); }
+.sync-label { font-size: 12px; color: var(--ink-2); }
 .sync-item.on .sync-label { color: var(--blue); }
 
 /* 发表设置弹层里的开关 */
@@ -173,3 +173,120 @@
 .emo-grid button { font-size: 24px; height: 40px; border-radius: 8px; }
 .emo-grid button:active { background: var(--tile); }
 
+
+/* ==========================================================================
+   全屏子页面：谁可以看 / 发表设置（从右侧滑入，覆盖在主写说说页之上）
+   ========================================================================== */
+.pub-subpage {
+  position: absolute; inset: 0; z-index: 50;
+  background: var(--page);
+  pointer-events: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0.3, 1);
+  display: flex; flex-direction: column;
+}
+.pub-subpage.show { transform: translateX(0); }
+
+/* 子页面顶栏：左返回箭头 + 居中标题（按真机 QQ 空间二级页顶栏） */
+.pub-subhead {
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  padding: 54px 16px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.pub-subhead h3 { font-size: 17px; font-weight: 700; color: var(--ink); }
+.sub-back {
+  position: absolute; left: 4px; top: 50%; transform: translateY(-25%);
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  color: var(--ink); font-size: 30px; line-height: 1;
+  background: none; border: 0; cursor: pointer;
+  font-family: -apple-system, sans-serif;
+}
+.sub-back:active { opacity: 0.5; }
+
+/* 子页面顶栏右侧「完成」按钮 */
+.sub-done {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-25%);
+  padding: 6px 14px;
+  background: var(--blue); color: #fff;
+  font-size: 14px; font-weight: 500;
+  border: 0; border-radius: 999px; cursor: pointer;
+}
+.sub-done:active { opacity: 0.8; }
+
+/* 子页面内容区（灰色背景，白色卡片分组） */
+.pub-subbody {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #F2F2F7;
+  padding: 12px 0;
+}
+
+/* 卡片分组容器（圆角白卡） */
+.sub-group {
+  background: var(--card);
+  border-radius: 10px;
+  margin: 0 16px 24px;
+  overflow: hidden;
+}
+.sub-group:last-child { margin-bottom: 0; }
+
+/* 谁可以看：单行无卡片风格（直接在灰背景上展示，左对齐文字） */
+.sub-list { padding: 8px 0; }
+.sub-list-row {
+  display: flex; align-items: center;
+  padding: 14px 20px 14px 0;
+  min-height: 48px;
+  cursor: pointer;
+}
+.sub-list-row + .sub-list-row { border-top: 1px solid #E5E5EA; }
+.sub-list-row.has-chev { padding: 14px 0; }
+.sub-list-row:active { background: var(--tile); }
+.sub-list-row .sub-check {
+  flex: none; width: 22px; height: 22px;
+  margin: 0 12px 0 20px;
+  color: #2CAAF5;
+}
+.sub-check-spacer { display: inline-block; width: 22px; margin: 0 12px 0 20px; }
+.sub-list-label { flex: 1; font-size: 16px; color: var(--ink); }
+.sub-chev { color: #C7C7CC; font-size: 22px; line-height: 1; padding: 0 16px 0 8px; }
+
+/* 发表设置：开关行 */
+.sub-switch-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  min-height: 56px;
+}
+.sub-switch-row + .sub-switch-row { border-top: 1px solid var(--line); }
+.sub-switch-row:active { background: var(--tile); }
+.sub-switch-row .label { font-size: 16px; color: var(--ink); font-weight: 400; flex: 1; }
+.sub-switch-row .switch { margin-left: auto; }
+
+/* 行内左侧小图标（时钟/AI 喇叭） */
+.sub-icon { flex: none; width: 20px; height: 20px; color: var(--ink); }
+
+/* 描述文字（灰色小字，在第二张卡下方） */
+.sub-desc {
+  margin: 0 32px 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* 开关组件（发表设置用绿色，QQ 空间标准色 #07C160） */
+.sub-switch-row .switch {
+  width: 46px; height: 28px; border-radius: 999px;
+  background: #E3E3E9; position: relative; flex: none;
+  transition: background 0.2s;
+}
+.sub-switch-row .switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 24px; height: 24px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: left 0.2s;
+}
+.sub-switch-row .switch.on { background: #07C160; }
+.sub-switch-row .switch.on::after { left: 20px; }
