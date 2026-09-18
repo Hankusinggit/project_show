@@ -23,8 +23,6 @@ function openPicker() {
 }
 
 function closePicker() {
-  /* 有选中内容时自动完成（对齐真机：✕ = 确认选择并返回） */
-  if (pickerSelection.size > 0) finishPick();
   const sub = document.getElementById('pickerPage');
   if (sub) sub.classList.remove('show');
 }
@@ -65,11 +63,26 @@ function buildPickerPage() {
       <button class="pk-tab${pickerTab === 'photo' ? ' on' : ''}" data-tab="photo">照片</button>
     </div>
     <div class="pk-body" id="pkBody">${buildGridHTML()}</div>
+    ${count > 0 ? buildBottomSelected(count) : buildBottomDefault()}
+  `;
+}
+
+/* 无选中：拍摄 | 相册 */
+function buildBottomDefault() {
+  return `
     <div class="pk-bottom">
       <button class="pk-mode-btn${pickerMode === 'camera' ? ' on' : ''}" data-mode="camera">拍摄</button>
       <button class="pk-mode-btn${pickerMode === 'album' ? ' on' : ''}" data-mode="album">相册</button>
-    </div>
-  `;
+    </div>`;
+}
+
+/* 有选中：预览 | 下一步(N) */
+function buildBottomSelected(count) {
+  return `
+    <div class="pk-bottom pk-bottom-sel">
+      <button class="pk-preview-btn" id="pkPreview">预览</button>
+      <button class="pk-next-btn" id="pkNext">下一步(${count})</button>
+    </div>`;
 }
 
 function buildGridHTML() {
@@ -98,11 +111,25 @@ function refreshPicker() {
   const sub = document.getElementById('pickerPage');
   if (!sub) return;
   document.getElementById('pkBody').innerHTML = buildGridHTML();
+  /* 底部栏根据选中数切换 */
+  const count = pickerSelection.size;
+  const oldBottom = sub.querySelector('.pk-bottom');
+  if (oldBottom) {
+    const newHtml = count > 0 ? buildBottomSelected(count) : buildBottomDefault();
+    const tmp = document.createElement('div');
+    tmp.innerHTML = newHtml.trim();
+    const newBottom = tmp.firstElementChild;
+    oldBottom.replaceWith(newBottom);
+    bindBottomEvents(sub, newBottom);
+  }
 }
 
 function bindPickerEvents(sub) {
-  /* ✕ 关闭 */
-  sub.querySelector('#pkClose').addEventListener('click', () => closePicker());
+  /* ✕ 关闭：有选中则完成选择，否则纯关闭 */
+  sub.querySelector('#pkClose').addEventListener('click', () => {
+    if (pickerSelection.size > 0) finishPick();
+    else closePicker();
+  });
   /* Tab 切换 */
   sub.querySelectorAll('.pk-tab').forEach(t => {
     t.addEventListener('click', () => {
@@ -111,17 +138,9 @@ function bindPickerEvents(sub) {
       refreshPicker();
     });
   });
-  /* 底部模式切换 */
-  sub.querySelectorAll('.pk-mode-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      pickerMode = b.dataset.mode;
-      sub.querySelectorAll('.pk-mode-btn').forEach(x => x.classList.toggle('on', x === b));
-      if (pickerMode === 'camera') {
-        const input = document.getElementById('cameraInput');
-        if (input) { input.value = ''; input.click(); }
-      }
-    });
-  });
+  /* 底部栏事件 */
+  const bottom = sub.querySelector('.pk-bottom');
+  if (bottom) bindBottomEvents(sub, bottom);
   /* 网格点击（委托） */
   document.getElementById('pkBody').addEventListener('click', e => {
     const cell = e.target.closest('.pk-cell');
@@ -142,6 +161,26 @@ function bindPickerEvents(sub) {
     }
     refreshPicker();
   });
+}
+
+/* 底部栏事件绑定（拍摄/相册 或 预览/下一步） */
+function bindBottomEvents(sub, bottom) {
+  /* 拍摄/相册模式 */
+  bottom.querySelectorAll('.pk-mode-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      pickerMode = b.dataset.mode;
+      if (pickerMode === 'camera') {
+        const input = document.getElementById('cameraInput');
+        if (input) { input.value = ''; input.click(); }
+      }
+    });
+  });
+  /* 下一步按钮 */
+  const nextBtn = bottom.querySelector('#pkNext');
+  if (nextBtn) nextBtn.addEventListener('click', finishPick);
+  /* 预览按钮（暂同完成，后续可扩展大图预览） */
+  const previewBtn = bottom.querySelector('#pkPreview');
+  if (previewBtn) previewBtn.addEventListener('click', finishPick);
 }
 
 function finishPick() {

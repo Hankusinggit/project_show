@@ -96,15 +96,17 @@
 .tag { color: var(--blue); }
 .p-loc { margin-top: 7px; font-size: 12px; color: var(--ink-2); }
 
-.p-imgs { margin-top: 11px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.p-imgs { margin-top: 11px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .p-imgs.single { grid-template-columns: minmax(0, 62%); }
+.p-imgs.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.p-imgs.cols-4 { grid-template-columns: repeat(2, 1fr); }
 .p-imgs.wide { grid-template-columns: 1fr; }
 .ph-img, .p-imgs img {
-  aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+  aspect-ratio: 1; border-radius: 6px; overflow: hidden;
   display: grid; place-items: center; font-size: 30px;
   width: 100%; height: 100%; object-fit: cover;
 }
-.p-imgs.wide .ph-img, .p-imgs.wide img { aspect-ratio: 16 / 9.5; font-size: 44px; border-radius: 12px; }
+.p-imgs.wide .ph-img, .p-imgs.wide img { aspect-ratio: 16 / 9.5; font-size: 44px; border-radius: 8px; }
 .p-imgs img { display: block; }
 
 /* 赞过的好友预览条 */

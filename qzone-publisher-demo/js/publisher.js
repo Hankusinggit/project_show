@@ -16,7 +16,7 @@ const PUB_VIEW_HTML = `
         <div class="editor is-empty" id="editor" contenteditable="true" data-ph="这一刻的想法…" spellcheck="false"></div>
         <div class="imgs" id="imgGrid"></div>
         <div class="media-area">
-          <button class="photo-card" onclick="pickImages()" title="添加图片/视频">
+          <button class="photo-card" id="photoCardBtn" onclick="pickImages()" title="添加图片/视频">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.6" cy="9.6" r="1.7"/><path d="m6.5 17 4.2-4.6c.5-.5 1.2-.5 1.7 0l2 2.2m1.3-1.4 1.1-1.2c.5-.5 1.2-.5 1.7 0l1.7 1.9"/></svg>
             <span class="photo-cap">照片/视频</span>
           </button>
@@ -156,7 +156,7 @@ function resetEditor() {
   state.images = [];
   state.visibility = 'public';
   state.location = null;
-  /* 发表/放弃后发表设置全部重置（AI声明随内容一起清空） */
+  imgEditing = false;
   pubSettings.scheduled = false;
   pubSettings.autoDelete = false;
   pubSettings.aiDeclare = false;
@@ -241,14 +241,23 @@ $('fileInput').addEventListener('change', async e => {
   refreshState();
 });
 
+/* 编辑态标记：长按图片后进入，显示删除按钮 */
+let imgEditing = false;
+
 function renderImages() {
   const g = $('imgGrid');
   g.innerHTML = '';
+  /* 保持编辑态 class */
+  g.classList.toggle('editing', imgEditing);
+
+  /* 有图时隐藏大方块入口（九宫格内有小方块），无图时显示 */
+  const bigBtn = $('photoCardBtn');
+  if (bigBtn) bigBtn.style.display = state.images.length > 0 ? 'none' : '';
+
   state.images.forEach((img, i) => {
     const t = document.createElement('div');
     t.className = 'img-tile';
     if (img.isVideo) {
-      /* 视频项：封面图 + 播放角标 + 时长 */
       t.innerHTML = '<img src="' + img.url + '" alt="">' +
         '<span class="pk-play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>' +
         '<span class="tile-dur">0:' + String(img.duration || 10).padStart(2, '0') + '</span>' +
@@ -256,8 +265,30 @@ function renderImages() {
     } else {
       t.innerHTML = '<img src="' + img.url + '" alt=""><button class="del" data-i="' + i + '">×</button>';
     }
+    /* 长按进入编辑态 */
+    t.addEventListener('contextmenu', e => { e.preventDefault(); enterImgEdit(); });
+    let longTimer = null;
+    t.addEventListener('touchstart', () => { longTimer = setTimeout(enterImgEdit, 500); }, { passive: true });
+    t.addEventListener('touchend', () => clearTimeout(longTimer));
+    t.addEventListener('touchmove', () => clearTimeout(longTimer));
     g.appendChild(t);
   });
+
+  /* 照片/视频小方块：有图且未满 9 张时追加在九宫格末尾（无图时由大方块入口负责） */
+  if (state.images.length > 0 && state.images.length < 9) {
+    const addTile = document.createElement('div');
+    addTile.className = 'img-tile img-add-tile';
+    addTile.innerHTML = '<button class="photo-card-inline" onclick="pickImages()">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="3"/><circle cx="8.6" cy="9.6" r="1.7"/><path d="m6.5 17 4.2-4.6c.5-.5 1.2-.5 1.7 0l2 2.2m1.3-1.4 1.1-1.2c.5-.5 1.2-.5 1.7 0l1.7 1.9"/></svg>' +
+      '<span class="photo-cap">照片/视频</span></button>';
+    g.appendChild(addTile);
+  }
+}
+
+function enterImgEdit() {
+  if (imgEditing) return;
+  imgEditing = true;
+  $('imgGrid').classList.add('editing');
 }
 
 /* 选中的图压缩成 dataURL，便于 localStorage 持久化 */

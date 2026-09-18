@@ -141,7 +141,12 @@ function postCard(p) {
     const g = document.createElement('div');
     const solo = list.length === 1;
     const wide = solo && typeof list[0] === 'object' && list[0].wide;
-    g.className = 'p-imgs' + (wide ? ' wide' : solo ? ' single' : '');
+    let gridClass = 'p-imgs';
+    if (wide) gridClass += ' wide';
+    else if (solo) gridClass += ' single';
+    else if (list.length === 2) gridClass += ' cols-2';
+    else if (list.length === 4) gridClass += ' cols-4';
+    g.className = gridClass;
 
     /* 收集所有媒体 URL，传给 Gallery 查看器 */
     const mediaUrls = [];

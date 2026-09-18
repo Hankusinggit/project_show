@@ -72,14 +72,16 @@
 .char-count { text-align: right; font-size: 11px; color: var(--ink-3); padding: 4px 2px 10px; display: none; }
 
 /* 图片九宫格 */
-.imgs { display: grid; grid-template-columns: repeat(auto-fill, 92px); gap: 8px; padding: 2px 0 8px; }
-.img-tile { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; }
+.imgs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px 0 8px; }
+.img-tile { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
 .img-tile img { width: 100%; height: 100%; object-fit: cover; }
 .img-tile .del {
-  position: absolute; top: 5px; right: 5px; width: 20px; height: 20px;
+  position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
   border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff;
-  font-size: 13px; line-height: 20px; text-align: center;
+  font-size: 14px; line-height: 22px; text-align: center;
+  display: none; /* 默认隐藏，长按进入编辑态后显示 */
 }
+.imgs.editing .img-tile .del { display: block; }
 
 /* 「图片/视频」+ 3 个快捷入口：照片卡在上（QQ 标准尺寸 76×96），快捷胶囊横排在下方 */
 .media-area { display: flex; flex-direction: column; gap: 18px; padding: 18px 8px 18px; }
@@ -291,122 +293,3 @@
 .sub-switch-row .switch.on { background: #07C160; }
 .sub-switch-row .switch.on::after { left: 20px; }
 
-/* ==========================================================================
-   选图器（全屏子页面）——对齐真机 QQ 空间选图器
-   ========================================================================== */
-
-/* 顶部栏：「最近照片 ▼」居中胶囊 + ✕ 关闭 */
-.pk-topbar {
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  padding: 50px 16px 10px;
-  background: #F2F2F7;
-  flex: none;
-}
-.pk-album-name {
-  background: #E8E8ED; border: 0; border-radius: 999px;
-  padding: 8px 20px; font-size: 16px; font-weight: 600; color: var(--ink);
-  cursor: pointer;
-}
-.pk-arrow-down { font-size: 12px; margin-left: 4px; }
-.pk-close {
-  position: absolute; right: 16px; top: 50%; transform: translateY(-25%);
-  width: 32px; height: 32px;
-  background: none; border: 0; font-size: 20px; color: var(--ink-2);
-  cursor: pointer;
-}
-
-/* Tab 切换：全部 / 视频 / 照片（三等分，选中下划线） */
-.pk-tabs {
-  display: flex;
-  padding: 6px 0 0;
-  background: #F2F2F7;
-  flex: none;
-}
-.pk-tab {
-  flex: 1; text-align: center;
-  font-size: 16px; color: var(--ink-2);
-  padding: 10px 0 8px; position: relative;
-  background: none; border: 0; cursor: pointer;
-}
-.pk-tab.on { color: var(--ink); font-weight: 700; }
-.pk-tab.on::after {
-  content: ''; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0;
-  width: 24px; height: 3px; border-radius: 2px; background: var(--blue);
-}
-
-/* 网格：4列紧密无间距 */
-.pk-body {
-  flex: 1; overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  background: #fff;
-  padding-bottom: 70px;
-  font-size: 0; /* 消除 inline-block 间隙 */
-}
-.pk-cell {
-  position: relative;
-  width: 25%; aspect-ratio: 1;
-  display: inline-block; vertical-align: top;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-.pk-cell img {
-  width: 100%; height: 100%; object-fit: cover;
-  display: block;
-  background: #E5E5EA;
-}
-/* 选中角标：右下角空心圆 → 蓝色实心数字 */
-.pk-check {
-  position: absolute; right: 6px; bottom: 6px;
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.15);
-  color: transparent;
-  font-size: 12px; font-weight: 700;
-  display: grid; place-items: center;
-}
-.pk-check.on { background: var(--blue); color: #fff; border-color: var(--blue); }
-/* 视频标记 */
-.pk-play {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 30px; height: 30px; border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff; display: grid; place-items: center;
-  pointer-events: none;
-}
-.pk-dur {
-  position: absolute; left: 6px; bottom: 6px;
-  font-size: 10px; color: #fff;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 1px 5px; border-radius: 3px;
-  pointer-events: none;
-}
-
-/* 底部栏：拍摄 | 相册（两个等宽 Tab） */
-.pk-bottom {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center;
-  padding: 0 0 env(safe-area-inset-bottom);
-  background: #fff;
-  border-top: 1px solid var(--line);
-}
-.pk-mode-btn {
-  flex: 1; text-align: center;
-  font-size: 16px; color: var(--ink-2);
-  padding: 14px 0; position: relative;
-  background: none; border: 0; cursor: pointer;
-}
-.pk-mode-btn.on { color: var(--blue); font-weight: 700; }
-.pk-mode-btn.on::after {
-  content: ''; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0;
-  width: 24px; height: 3px; border-radius: 2px; background: var(--blue);
-}
-
-/* 发布器九宫格里的视频项角标 */
-.img-tile .pk-play { width: 26px; height: 26px; }
-.img-tile .tile-dur {
-  position: absolute; right: 5px; bottom: 5px;
-  font-size: 10px; color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  padding: 1px 5px; border-radius: 4px;
-}
