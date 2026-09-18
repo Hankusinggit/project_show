@@ -265,6 +265,18 @@ function renderImages() {
     } else {
       t.innerHTML = '<img src="' + img.url + '" alt=""><button class="del" data-i="' + i + '">×</button>';
     }
+    /* 点击图片 → 全屏预览（发布器模式，可删除） */
+    t.querySelector('img').addEventListener('click', e => {
+      e.stopPropagation();
+      const urls = state.images.map(it => it.isVideo ? it.videoSrc : it.dataUrl);
+      openViewer(urls, i, {
+        onDelete: (removedIdx, remaining) => {
+          state.images.splice(removedIdx, 1);
+          renderImages();
+          refreshState();
+        }
+      });
+    });
     /* 长按进入编辑态 */
     t.addEventListener('contextmenu', e => { e.preventDefault(); enterImgEdit(); });
     let longTimer = null;

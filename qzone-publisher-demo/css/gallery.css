@@ -60,3 +60,58 @@
   width: 100%; height: 100%;
   object-fit: contain;
 }
+
+/* 顶栏：返回 + 计数器 + 删除（渐变蒙层） */
+.viewer-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 48px 16px 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+  pointer-events: none;
+}
+.viewer-topbar > * { pointer-events: auto; }
+.viewer-back {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: #fff;
+  border: 0; font-size: 24px; line-height: 1;
+  display: grid; place-items: center; cursor: pointer;
+}
+.viewer-back:active { background: rgba(255,255,255,0.3); }
+.viewer-counter {
+  color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 500;
+  padding: 3px 14px;
+  background: rgba(0,0,0,0.35); border-radius: 12px;
+}
+.viewer-delete {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); color: #fff;
+  border: 0; display: grid; place-items: center; cursor: pointer;
+}
+.viewer-delete:active { background: rgba(255,255,255,0.3); }
+
+/* 删除确认弹窗（对齐真机样式） */
+.viewer-confirm {
+  position: absolute; inset: 0; z-index: 5;
+  background: rgba(0,0,0,0.4);
+  display: grid; place-items: center;
+}
+.viewer-confirm-box {
+  background: #fff; border-radius: 14px;
+  width: 270px; text-align: center;
+  overflow: hidden;
+}
+.viewer-confirm-box p {
+  font-size: 17px; color: var(--ink); font-weight: 400;
+  margin: 0; padding: 28px 20px 24px;
+}
+.viewer-confirm-btns {
+  display: flex;
+  border-top: 1px solid #E5E5EA;
+}
+.viewer-confirm-btns button {
+  flex: 1; padding: 14px 0;
+  font-size: 17px; font-weight: 400;
+  border: 0; cursor: pointer; background: none;
+}
+#viewerConfirmCancel { color: #007AFF; }
+#viewerConfirmOk { color: #FA5151; border-left: 1px solid #E5E5EA; }
