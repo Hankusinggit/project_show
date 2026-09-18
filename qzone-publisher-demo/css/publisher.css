@@ -119,7 +119,7 @@
 .opt + .opt { border-top: 1px solid var(--line); }
 .opt svg { color: var(--ink-2); flex: none; }
 .opt-val { margin-left: auto; font-size: 14px; color: var(--ink-2); }
-.chev { margin-left: auto; color: var(--ink-3); font-size: 16px; }
+.chev { margin-left: 6px; color: var(--ink-3); font-size: 16px; }
 
 /* 同步入口：两枚深色圆形按钮 + 小字（左对齐） */
 .sync-entries { display: flex; gap: 0; padding: 6px 20px 10px; }

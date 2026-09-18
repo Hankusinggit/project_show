@@ -33,6 +33,8 @@ function saveDraft() {
     images: state.images.map(i => i.dataUrl),
     visibility: state.visibility,
     location: state.location,
+    /* AI 声明随草稿持久化（内容属性）；定时/自动删除是即时设置，不持久化 */
+    aiDeclare: typeof pubSettings !== 'undefined' ? pubSettings.aiDeclare : false,
   };
   try { localStorage.setItem(LS_DRAFT, JSON.stringify(d)); } catch (e) {}
 }

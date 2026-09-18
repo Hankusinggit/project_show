@@ -45,6 +45,7 @@ const PUB_VIEW_HTML = `
         <div class="opt" onclick="showSubpage('settings')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.14-1.4l2-1.55-2-3.46-2.36.95A7 7 0 0 0 14 5.1L13.7 2.6h-3.4L10 5.1a7 7 0 0 0-2.5 1.44l-2.36-.95-2 3.46 2 1.55A7 7 0 0 0 5 12c0 .48.05.94.14 1.4l-2 1.55 2 3.46 2.36-.95A7 7 0 0 0 10 18.9l.3 2.5h3.4l.3-2.5a7 7 0 0 0 2.5-1.44l2.36.95 2-3.46-2-1.55c.09-.46.14-.92.14-1.4z"/></svg>
           <span>发表设置</span>
+          <span class="opt-val" id="settingsLabel"></span>
           <span class="chev">›</span>
         </div>
       </div>
@@ -86,7 +87,9 @@ function closePublisher() {
 }
 
 function cancelPublish() {
-  if (getContentText() || state.images.length) {
+  /* 有任何未落盘的内容都弹保存询问：文字 / 图片 / 发表设置任一非默认 */
+  const hasSettingsChanged = pubSettings.scheduled || pubSettings.autoDelete || pubSettings.aiDeclare;
+  if (getContentText() || state.images.length || hasSettingsChanged) {
     openDraftSheet();
   } else {
     closePublisher();
@@ -116,6 +119,12 @@ function openDraftSheet() {
   const sep = () => { const s1 = document.createElement('div'); s1.className = 'sh-sep'; s.appendChild(s1); };
 
   mk('保存草稿', () => {
+    /* 只有真正有内容时才能保存：文字、图片、AI 声明任一非空 */
+    const hasContent = getContentText() || state.images.length > 0 || pubSettings.aiDeclare;
+    if (!hasContent) {
+      toast('没有内容可以保存');
+      return;
+    }
     saveDraft();
     resetEditor();
     closeSheet();
@@ -147,10 +156,15 @@ function resetEditor() {
   state.images = [];
   state.visibility = 'public';
   state.location = null;
+  /* 发表/放弃后发表设置全部重置（AI声明随内容一起清空） */
+  pubSettings.scheduled = false;
+  pubSettings.autoDelete = false;
+  pubSettings.aiDeclare = false;
   renderImages();
   updateVisLabel();
   updateLocVal();
   refreshState();
+  updateSettingsLabel();
 }
 
 function getContentText() {
@@ -272,10 +286,13 @@ function restoreDraftIfAny() {
     state.images = (d.images || []).map(u => ({ url: u, dataUrl: u }));
     state.visibility = d.visibility || 'public';
     state.location = d.location || null;
+    /* AI 声明从草稿恢复（内容属性）；定时/自动删除不恢复，保持默认关 */
+    if (d.aiDeclare) pubSettings.aiDeclare = true;
     renderImages();
     updateVisLabel();
     updateLocVal();
     refreshState();
+    updateSettingsLabel();
   }
   /* 恢复完成即清除：草稿是一次性的，下次进入是干净状态 */
   clearDraft();
@@ -366,8 +383,33 @@ function toggleSync(which) {
  * 全屏子页面：谁可以看 / 发表设置
  * ========================================================================== */
 
-/* 子页面状态：发表设置开关 */
+/* 子页面状态：发表设置开关（scheduled/autoDelete 不随草稿持久化，
+   aiDeclare 是内容属性，随草稿保存/恢复——对齐真机设计） */
 const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false };
+
+/* 发表设置行右侧文案动态拼接：
+   - 只有定时开 → 显示具体时间
+   - 定时 + 其他项同时开 → 时间简化为「定时发表」（防文案过长截断）
+   - 其他项 → 直接拼名字 */
+function updateSettingsLabel() {
+  const el = $('settingsLabel');
+  if (!el) return;
+  const parts = [];
+  const hasOther = pubSettings.autoDelete || pubSettings.aiDeclare;
+  if (pubSettings.scheduled) {
+    parts.push(hasOther ? '定时发表' : formatScheduleTime());
+  }
+  if (pubSettings.autoDelete) parts.push('自动删除');
+  if (pubSettings.aiDeclare) parts.push('已声明');
+  el.textContent = parts.join('/');
+}
+
+/* 定时时间格式化（暂用当前时间+1小时占位，日期选择器在第三批实现） */
+function formatScheduleTime() {
+  const d = new Date(Date.now() + 3600e3);
+  const p = n => String(n).padStart(2, '0');
+  return p(d.getMonth() + 1) + '月' + p(d.getDate()) + '日 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ' 发表';
+}
 
 function showSubpage(kind) {
   /* 如果子页面容器不存在，先创建 */
@@ -497,6 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pubSettings[key] = !pubSettings[key];
       const sw = swRow.querySelector('.switch');
       if (sw) sw.classList.toggle('on');
+      updateSettingsLabel();   /* 实时刷新发表设置行右侧文案 */
       return;
     }
   });
