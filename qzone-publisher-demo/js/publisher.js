@@ -247,7 +247,15 @@ function renderImages() {
   state.images.forEach((img, i) => {
     const t = document.createElement('div');
     t.className = 'img-tile';
-    t.innerHTML = '<img src="' + img.url + '" alt=""><button class="del" data-i="' + i + '">×</button>';
+    if (img.isVideo) {
+      /* 视频项：封面图 + 播放角标 + 时长 */
+      t.innerHTML = '<img src="' + img.url + '" alt="">' +
+        '<span class="pk-play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>' +
+        '<span class="tile-dur">0:' + String(img.duration || 10).padStart(2, '0') + '</span>' +
+        '<button class="del" data-i="' + i + '">×</button>';
+    } else {
+      t.innerHTML = '<img src="' + img.url + '" alt=""><button class="del" data-i="' + i + '">×</button>';
+    }
     g.appendChild(t);
   });
 }
@@ -318,7 +326,7 @@ function doPublish() {
       id: 'p' + Date.now(),
       mine: true,
       text: editor.innerHTML,
-      images: state.images.map(i => i.dataUrl),
+      images: state.images.map(i => i.isVideo ? i.videoSrc : i.dataUrl),
       visibility: state.visibility,
       location: state.location,
       time: Date.now(),
@@ -367,7 +375,7 @@ function toggleEmoji(e) {
 function closeEmoji() { $('emoPanel').classList.remove('open'); }
 
 /* 「图片/视频」圆按钮 → 打开系统选图 */
-function pickImages() { $('fileInput').click(); }
+function pickImages() { openPicker(); }
 
 /* 同步到个性签名 / 朋友圈：点击切换选中态 */
 function toggleSync(which) {

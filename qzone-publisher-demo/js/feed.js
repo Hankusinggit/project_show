@@ -148,12 +148,32 @@ function postCard(p) {
     list.forEach(item => {
       if (typeof item === 'string') {
         mediaUrls.push(item);
-        const img = document.createElement('img');
-        img.src = item;
-        img.alt = '';
-        img.style.cursor = 'zoom-in';
-        img.addEventListener('click', () => openViewer(mediaUrls, mediaUrls.indexOf(item)));
-        g.appendChild(img);
+        if (/\.(mp4|mov|webm|m4v)$/i.test(item)) {
+          /* 视频：封面帧 + 播放按钮，点击进 Gallery 播放 */
+          const isCover = typeof item === 'object';
+          const wrap = document.createElement('div');
+          wrap.className = 'feed-video';
+          const poster = item; /* 已是封面/视频地址，Gallery 会识别 mp4 */
+          const v = document.createElement('video');
+          v.src = item;
+          v.playsInline = true;
+          v.preload = 'metadata';
+          v.muted = true;
+          wrap.appendChild(v);
+          const play = document.createElement('span');
+          play.className = 'pk-play';
+          play.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+          wrap.appendChild(play);
+          wrap.addEventListener('click', () => openViewer(mediaUrls, mediaUrls.indexOf(item)));
+          g.appendChild(wrap);
+        } else {
+          const img = document.createElement('img');
+          img.src = item;
+          img.alt = '';
+          img.style.cursor = 'zoom-in';
+          img.addEventListener('click', () => openViewer(mediaUrls, mediaUrls.indexOf(item)));
+          g.appendChild(img);
+        }
       } else if (item.img) {
         mediaUrls.push(item.img);
         const im = document.createElement('img');
