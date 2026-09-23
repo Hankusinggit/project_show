@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="description" content="QQ空间发布器 · 高保真交互演示" />
 <title>QQ空间 · 发布器演示</title>
-<link rel="stylesheet" href="css/base.css?v=20261003">
-<link rel="stylesheet" href="css/phone.css?v=20261003">
-<link rel="stylesheet" href="css/feed.css?v=20261003">
-<link rel="stylesheet" href="css/publisher.css?v=20261003">
-<link rel="stylesheet" href="css/picker.css?v=20261003">
-<link rel="stylesheet" href="css/sheet.css?v=20261003">
-<link rel="stylesheet" href="css/gallery.css?v=20261003">
+<link rel="stylesheet" href="css/base.css?v=20261005">
+<link rel="stylesheet" href="css/phone.css?v=20261005">
+<link rel="stylesheet" href="css/feed.css?v=20261005">
+<link rel="stylesheet" href="css/publisher.css?v=20261005">
+<link rel="stylesheet" href="css/picker.css?v=20261005">
+<link rel="stylesheet" href="css/sheet.css?v=20261005">
+<link rel="stylesheet" href="css/gallery.css?v=20261005">
 </head>
 <body>
 
@@ -126,16 +126,16 @@
 <input type="file" id="fileInput" accept="image/*" multiple hidden />
 <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden />
 
-<script src="js/data.js?v=20261003"></script>
-<script src="js/state.js?v=20261003"></script>
-<script src="js/lazy-list.js?v=20261003"></script>
-<script src="js/wheel-picker.js?v=20261003"></script>
-<script src="js/feed.js?v=20261003"></script>
-<script src="js/sheet.js?v=20261003"></script>
-<script src="js/publisher.js?v=20261003"></script>
-<script src="js/picker-data.js?v=20261003"></script>
-<script src="js/picker.js?v=20261003"></script>
-<script src="js/gallery.js?v=20261003"></script>
+<script src="js/data.js?v=20261005"></script>
+<script src="js/state.js?v=20261005"></script>
+<script src="js/lazy-list.js?v=20261005"></script>
+<script src="js/wheel-picker.js?v=20261005"></script>
+<script src="js/feed.js?v=20261005"></script>
+<script src="js/sheet.js?v=20261005"></script>
+<script src="js/publisher.js?v=20261005"></script>
+<script src="js/picker-data.js?v=20261005"></script>
+<script src="js/picker.js?v=20261005"></script>
+<script src="js/gallery.js?v=20261005"></script>
 <script>
 /* ==========================================================================
  * 工具
@@ -256,6 +256,23 @@ setInterval(sbTick, 30000);
     requestAnimationFrame(update);
   }, { passive: true });
   update();
+})();
+
+/* ==========================================================================
+ * 手机整机等比缩放：屏幕固定 Mate 80 Pro Max 比例（863px 高），视口不够高时
+ * 用 zoom 缩小整机（布局同步缩放，比例恒定）；够高则保持原始尺寸
+ * ========================================================================== */
+(function fitPhone() {
+  const PHONE_H = 887;   /* 机身总高：屏幕 863 + 边框 12×2 */
+  function fit() {
+    const phone = document.querySelector('.phone');
+    if (!phone) return;
+    /* 移动端（≤560px）脱壳全屏，不缩放 */
+    if (window.innerWidth <= 560) { phone.style.zoom = ''; return; }
+    phone.style.zoom = Math.min(1, (window.innerHeight - 48) / PHONE_H);
+  }
+  window.addEventListener('resize', fit);
+  fit();
 })();
 </script>
 </body>

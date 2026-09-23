@@ -29,7 +29,9 @@
 .phone-screen {
   position: relative;
   width: 400px;
-  height: min(872px, calc(100dvh - 64px));
+  /* Mate 80 Pro Max 屏幕比例：2848×1320 ≈ 2.157:1 → 400 × 2.157 ≈ 863，比例恒定不随视口变化；
+     视口不够高时由 fitPhone() 对整机做 zoom 等比缩放 */
+  height: 863px;
   border-radius: 46px;
   overflow: hidden;
   background: var(--page);
