@@ -53,7 +53,10 @@
   flex: 0 0 100%;
   width: 100%; height: 100%;
   object-fit: contain;
-  pointer-events: none;
+  /* 不能设 pointer-events:none —— track 盒子平移出可视区后，
+     指针事件必须落在 img 上冒泡回 track，否则第 2 张起滑切全部失效 */
+  cursor: grab;
+  -webkit-user-drag: none;
   transform-origin: 0 0; /* 缩放平移由 JS 计算，原点固定左上角 */
 }
 .viewer-track > video {

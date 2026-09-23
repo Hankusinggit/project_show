@@ -115,14 +115,30 @@ function vResetZoom(animate) {
   });
 }
 
-/* 平移越界钳制：不让图片被拖出可视区 */
+/* 平移越界钳制：按 object-fit:contain 的实际内容盒计算，
+   内容盒比元素盒小（横图上下黑边/竖图左右黑边）时，
+   以内容边缘贴齐视口为界；内容小于视口的维度锁定居中，不漏黑边 */
 function vClampPan() {
   const img = vCurrentImg();
   if (!img) return;
-  const maxX = (vZoom.scale - 1) * img.clientWidth / 2;
-  const maxY = (vZoom.scale - 1) * img.clientHeight / 2;
-  vZoom.x = Math.min(maxX, Math.max(-maxX, vZoom.x));
-  vZoom.y = Math.min(maxY, Math.max(-maxY, vZoom.y));
+  const s = vZoom.scale;
+  const sw = img.clientWidth, sh = img.clientHeight;
+  /* contain 内容尺寸与居中偏移（图未加载完成时退化为整元素盒） */
+  let cw = sw, ch = sh;
+  if (img.naturalWidth && img.naturalHeight) {
+    const ar = img.naturalWidth / img.naturalHeight;
+    if (ar > sw / sh) ch = sw / ar;
+    else cw = sh * ar;
+  }
+  const offX = (sw - cw) / 2, offY = (sh - ch) / 2;
+  const clampAxis = (v, sv, off, c) => {
+    const lo = sv - s * off - s * c;  /* 内容尾缘贴齐视口尾缘 */
+    const hi = -s * off;              /* 内容头缘贴齐视口头缘 */
+    /* 内容缩放后小于视口 → 锁定内容居中 */
+    return lo <= hi ? Math.min(hi, Math.max(lo, v)) : (lo + hi) / 2;
+  };
+  vZoom.x = clampAxis(vZoom.x, sw, offX, cw);
+  vZoom.y = clampAxis(vZoom.y, sh, offY, ch);
 }
 
 /* 双击：1 ↔ 2.5 缩放切换（以双击点为中心） */
@@ -257,6 +273,7 @@ function doDelete() {
     /* ===== 指针交互：双指捏合缩放 / 放大态单指平移 / 原有左右滑切 ===== */
     track.addEventListener('pointerdown', e => {
       if (e.target.tagName === 'VIDEO') return;
+      clearTimeout(vTapTimer); vTapTimer = null;  /* 新手势开始，取消待定的单击关闭 */
       track.setPointerCapture(e.pointerId);
       vPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -335,7 +352,12 @@ function doDelete() {
       if (vPinch) {
         if (vPointers.size < 2) {
           vPinch = null;
-          if (vPointers.size === 1) {
+          /* 轻微缩放（< 1.2 倍）松手回弹到 1，避免残留 1.0x 出头把滑切卡成无效平移 */
+          if (vZoom.scale > 1 && vZoom.scale < 1.2) {
+            vZoom.scale = 1; vZoom.x = 0; vZoom.y = 0;
+            vApplyZoom(true);
+          }
+          if (vPointers.size === 1 && vZoom.scale > 1) {
             /* 剩一指 → 无缝转为平移 */
             const [p] = [...vPointers.values()];
             vPan = { x: p.x, y: p.y, zx: vZoom.x, zy: vZoom.y };
@@ -366,6 +388,20 @@ function doDelete() {
     };
     track.addEventListener('pointerup', e => endPointer(e, false));
     track.addEventListener('pointercancel', e => endPointer(e, true));
+
+    /* 安全网：失焦/切后台时 pointerup 可能丢失，留下幽灵指针会让捏合计算错乱，统一清理 */
+    const resetGestureState = () => {
+      vPointers.clear();
+      vPinch = null;
+      vPan = null;
+      if (vDragging) {
+        vDragging = false;
+        track.classList.remove('dragging');
+        vUpdate();
+      }
+    };
+    window.addEventListener('blur', resetGestureState);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) resetGestureState(); });
 
     /* 桌面端触控板双指捏合：Chrome 触发 ctrl+wheel 而非 touch 事件，需单独处理 */
     track.addEventListener('wheel', e => {
