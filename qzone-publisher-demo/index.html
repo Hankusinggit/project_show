@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="description" content="QQ空间发布器 · 高保真交互演示" />
 <title>QQ空间 · 发布器演示</title>
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/phone.css">
-<link rel="stylesheet" href="css/feed.css">
-<link rel="stylesheet" href="css/publisher.css">
-<link rel="stylesheet" href="css/picker.css">
-<link rel="stylesheet" href="css/sheet.css">
-<link rel="stylesheet" href="css/gallery.css">
+<link rel="stylesheet" href="css/base.css?v=20260923">
+<link rel="stylesheet" href="css/phone.css?v=20260923">
+<link rel="stylesheet" href="css/feed.css?v=20260923">
+<link rel="stylesheet" href="css/publisher.css?v=20260923">
+<link rel="stylesheet" href="css/picker.css?v=20260923">
+<link rel="stylesheet" href="css/sheet.css?v=20260923">
+<link rel="stylesheet" href="css/gallery.css?v=20260923">
 </head>
 <body>
 
@@ -126,14 +126,15 @@
 <input type="file" id="fileInput" accept="image/*" multiple hidden />
 <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden />
 
-<script src="js/data.js"></script>
-<script src="js/state.js"></script>
-<script src="js/feed.js"></script>
-<script src="js/sheet.js"></script>
-<script src="js/publisher.js"></script>
-<script src="js/picker-data.js"></script>
-<script src="js/picker.js"></script>
-<script src="js/gallery.js"></script>
+<script src="js/data.js?v=20260923"></script>
+<script src="js/state.js?v=20260923"></script>
+<script src="js/lazy-list.js?v=20260923"></script>
+<script src="js/feed.js?v=20260923"></script>
+<script src="js/sheet.js?v=20260923"></script>
+<script src="js/publisher.js?v=20260923"></script>
+<script src="js/picker-data.js?v=20260923"></script>
+<script src="js/picker.js?v=20260923"></script>
+<script src="js/gallery.js?v=20260923"></script>
 <script>
 /* ==========================================================================
  * 工具
@@ -157,22 +158,38 @@ function resetDemo() {
   toast('已重置 ✅');
 }
 
-/* ========================================================================== * 初始化
+/* ==========================================================================
+ * 发布器视图注入（解耦：HTML 由模板字符串动态渲染到空容器）
+ * —— 放在所有初始化之前执行，且不依赖 feed/状态栏等任何初始化：
+ *    后续初始化即使抛错，发布器也完整可用
  * ========================================================================== */
-renderFeed();
-$('meName').textContent = DATA.me.name;
-$('meBadge').textContent = DATA.me.badge;
-$('meSub').textContent = '访问总量 ' + DATA.me.visits;
-/* 头像支持填图片：DATA.me.avatar.img 填上地址就自动换成图片 */
-if (DATA.me.avatar.img) {
-  const el = $('meAva');
-  el.textContent = '';
-  el.style.background = 'none';
-  const im = document.createElement('img');
-  im.src = DATA.me.avatar.img;
-  im.alt = '';
-  el.appendChild(im);
-}
+$('pubLayer').innerHTML = PUB_VIEW_HTML;
+$('emoPanel').innerHTML = EMO_PANEL_HTML;
+/* 注入后才能引用发布器内部元素 */
+editor = $('editor');
+initEditorEvents();
+buildEmojiGrid();
+
+/* ========================================================================== * 初始化（错误隔离：任一环节抛错只影响自身，不拖垮其他部分）
+ * ========================================================================== */
+try {
+  renderFeed();
+} catch (e) { console.error('[boot] renderFeed:', e); window.__bootErr = String(e); }
+try {
+  $('meName').textContent = DATA.me.name;
+  $('meBadge').textContent = DATA.me.badge;
+  $('meSub').textContent = '访问总量 ' + DATA.me.visits;
+  /* 头像支持填图片：DATA.me.avatar.img 填上地址就自动换成图片 */
+  if (DATA.me.avatar.img) {
+    const el = $('meAva');
+    el.textContent = '';
+    el.style.background = 'none';
+    const im = document.createElement('img');
+    im.src = DATA.me.avatar.img;
+    im.alt = '';
+    el.appendChild(im);
+  }
+} catch (e) { console.error('[boot] profile:', e); window.__bootErr = String(e); }
 
 /* 状态栏显示真实时间 */
 function sbTick() {
@@ -239,16 +256,6 @@ setInterval(sbTick, 30000);
   }, { passive: true });
   update();
 })();
-
-/* ========================================================================== * 发布器视图注入（解耦：HTML 由模板字符串动态渲染到空容器）
- * ========================================================================== */
-$('pubLayer').innerHTML = PUB_VIEW_HTML;
-$('emoPanel').innerHTML = EMO_PANEL_HTML;
-
-/* 注入后才能引用发布器内部元素 */
-editor = $('editor');
-initEditorEvents();
-buildEmojiGrid();
 </script>
 </body>
 </html>

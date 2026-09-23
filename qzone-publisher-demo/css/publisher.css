@@ -73,8 +73,12 @@
 
 /* 图片九宫格 */
 .imgs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px 0 8px; }
-.img-tile { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
-.img-tile img { width: 100%; height: 100%; object-fit: cover; }
+.img-tile {
+  position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  touch-action: none;            /* 手势归拖拽逻辑管，防止滚动抢占长按 */
+  -webkit-touch-callout: none;   /* 禁 iOS 长按系统弹层 */
+}
+.img-tile img { width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
 .img-tile .del {
   position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
   border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff;
@@ -82,6 +86,18 @@
   display: none; /* 默认隐藏，长按进入编辑态后显示 */
 }
 .imgs.editing .img-tile .del { display: block; }
+
+/* 拖拽排序（数据驱动）：被拖项格子 → 纯空隙（不画任何内容，其他图实时避让滑动） */
+.img-tile.drag-src > * { visibility: hidden; }
+.img-tile.drag-ghost {
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0.95;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+body.tile-dragging { user-select: none; -webkit-user-select: none; cursor: grabbing; }
 
 /* 「图片/视频」+ 3 个快捷入口：照片卡在上（QQ 标准尺寸 76×96），快捷胶囊横排在下方 */
 .media-area { display: flex; flex-direction: column; gap: 18px; padding: 18px 8px 18px; }

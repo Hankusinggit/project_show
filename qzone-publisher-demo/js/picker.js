@@ -194,7 +194,7 @@ function finishPick() {
     return { url, dataUrl: url };
   });
   state.images = items;
-  renderImages();
+  imgList.reset(items);   /* 数据接口：整表回写（自动重渲染） */
   refreshState();
   closePicker();
 }
@@ -207,8 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!f) return;
     const dataUrl = await compressImage(f);
     if (!dataUrl) return;
-    state.images.push({ url: dataUrl, dataUrl });
-    renderImages();
+    imgList.add({ url: dataUrl, dataUrl });   /* 数据接口：追加（自动重渲染） */
     refreshState();
     closePicker();
     toast('拍照已添加 📷');

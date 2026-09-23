@@ -154,13 +154,13 @@ function resetEditor() {
   editor.innerHTML = '';
   editor.classList.add('is-empty');
   state.images = [];
+  imgList.reset(state.images);   /* 数据接口：整表清空（自动重渲染） */
   state.visibility = 'public';
   state.location = null;
   imgEditing = false;
   pubSettings.scheduled = false;
   pubSettings.autoDelete = false;
   pubSettings.aiDeclare = false;
-  renderImages();
   updateVisLabel();
   updateLocVal();
   refreshState();
@@ -194,10 +194,12 @@ function initEditorEvents() {
   $('imgGrid').addEventListener('click', e => {
     const del = e.target.closest('.del');
     if (!del) return;
-    state.images.splice(+del.dataset.i, 1);
-    renderImages();
+    imgList.remove(+del.dataset.i);   /* 数据接口：删除（自动重渲染） */
     refreshState();
   });
+
+  /* 列表数据驱动渲染：imgList 的一切变更（增/删/换位/拖拽会话）自动重渲染 */
+  imgList.onChange(renderImages);
 }
 
 function placeCaretEnd() {
@@ -233,61 +235,76 @@ $('fileInput').addEventListener('change', async e => {
   const files = [...e.target.files];
   e.target.value = '';
   for (const f of files) {
-    if (state.images.length >= 9) { toast('最多 9 张图啦'); break; }
+    if (imgList.size >= 9) { toast('最多 9 张图啦'); break; }
     const dataUrl = await compressImage(f);
-    if (dataUrl) state.images.push({ url: dataUrl, dataUrl });
+    if (dataUrl) imgList.add({ url: dataUrl, dataUrl });   /* 数据接口：追加（自动重渲染） */
   }
-  renderImages();
   refreshState();
 });
 
 /* 编辑态标记：长按图片后进入，显示删除按钮 */
 let imgEditing = false;
 
+/* 发布器图片九宫格的列表状态：数据与拖拽会话统一走 LazyListState 数据接口，
+   底层数组与 state.images 保持同引用（草稿/发表/选图器读旧字段不受影响） */
+const imgList = new LazyListState(state.images);
+
 function renderImages() {
   const g = $('imgGrid');
-  g.innerHTML = '';
   /* 保持编辑态 class */
   g.classList.toggle('editing', imgEditing);
 
   /* 有图时隐藏大方块入口（九宫格内有小方块），无图时显示 */
   const bigBtn = $('photoCardBtn');
-  if (bigBtn) bigBtn.style.display = state.images.length > 0 ? 'none' : '';
+  if (bigBtn) bigBtn.style.display = imgList.size > 0 ? 'none' : '';
 
-  state.images.forEach((img, i) => {
+  /* FLIP 动画：以数据项为 key 记录旧位置（跨重渲染追踪同一项） */
+  const oldPos = new Map();
+  g.querySelectorAll('.img-tile:not(.img-add-tile)').forEach(t => {
+    if (t.__item) oldPos.set(t.__item, t.getBoundingClientRect());
+  });
+
+  g.innerHTML = '';
+  imgList.items.forEach((img, i) => {
     const t = document.createElement('div');
     t.className = 'img-tile';
+    t.dataset.idx = i;
+    t.__item = img;
+    /* 拖拽会话中：被拖项的格子渲染为空槽 */
+    if (imgList.dragIndex === i) t.classList.add('drag-src');
     if (img.isVideo) {
-      t.innerHTML = '<img src="' + img.url + '" alt="">' +
+      t.innerHTML = '<img src="' + img.url + '" alt="" draggable="false">' +
         '<span class="pk-play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>' +
         '<span class="tile-dur">0:' + String(img.duration || 10).padStart(2, '0') + '</span>' +
         '<button class="del" data-i="' + i + '">×</button>';
     } else {
-      t.innerHTML = '<img src="' + img.url + '" alt=""><button class="del" data-i="' + i + '">×</button>';
+      t.innerHTML = '<img src="' + img.url + '" alt="" draggable="false"><button class="del" data-i="' + i + '">×</button>';
     }
-    /* 点击图片 → 全屏预览（发布器模式，可删除） */
+    /* 点击图片 → 全屏预览（发布器模式，可删除）；拖拽/滑动后的点击被抑制 */
     t.querySelector('img').addEventListener('click', e => {
       e.stopPropagation();
-      const urls = state.images.map(it => it.isVideo ? it.videoSrc : it.dataUrl);
+      if (tileClickSuppressed) return;
+      const urls = imgList.items.map(it => it.isVideo ? it.videoSrc : it.dataUrl);
       openViewer(urls, i, {
         onDelete: (removedIdx, remaining) => {
-          state.images.splice(removedIdx, 1);
-          renderImages();
+          imgList.remove(removedIdx);
           refreshState();
         }
       });
     });
-    /* 长按进入编辑态 */
+    /* 右键 → 编辑态（桌面兜底） */
     t.addEventListener('contextmenu', e => { e.preventDefault(); enterImgEdit(); });
-    let longTimer = null;
-    t.addEventListener('touchstart', () => { longTimer = setTimeout(enterImgEdit, 500); }, { passive: true });
-    t.addEventListener('touchend', () => clearTimeout(longTimer));
-    t.addEventListener('touchmove', () => clearTimeout(longTimer));
+    /* Pointer 统一手势：长按 500ms → 编辑态 + 拖拽换位（触屏/鼠标通用） */
+    t.addEventListener('pointerdown', e => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest('.del')) return;
+      startTileGesture(t, i, e.clientX, e.clientY);
+    });
     g.appendChild(t);
   });
 
   /* 照片/视频小方块：有图且未满 9 张时追加在九宫格末尾（无图时由大方块入口负责） */
-  if (state.images.length > 0 && state.images.length < 9) {
+  if (imgList.size > 0 && imgList.size < 9) {
     const addTile = document.createElement('div');
     addTile.className = 'img-tile img-add-tile';
     addTile.innerHTML = '<button class="photo-card-inline" onclick="pickImages()">' +
@@ -295,12 +312,143 @@ function renderImages() {
       '<span class="photo-cap">照片/视频</span></button>';
     g.appendChild(addTile);
   }
+
+  /* FLIP 回放：位置变化过的项从旧位置滑到新位置（换位时其他项让位动画） */
+  g.querySelectorAll('.img-tile:not(.img-add-tile)').forEach(t => {
+    const o = oldPos.get(t.__item);
+    if (!o) return;
+    const n = t.getBoundingClientRect();
+    const dx = Math.round(o.left - n.left), dy = Math.round(o.top - n.top);
+    if (!dx && !dy) return;
+    t.style.transition = 'none';
+    t.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    void t.offsetWidth;  /* 强制回流，让初始位移先生效 */
+    t.style.transition = 'transform 0.18s cubic-bezier(0.25, 0.8, 0.25, 1)';
+    t.style.transform = '';
+    t.addEventListener('transitionend', () => { t.style.transition = ''; }, { once: true });
+  });
 }
 
 function enterImgEdit() {
   if (imgEditing) return;
   imgEditing = true;
   $('imgGrid').classList.add('editing');
+}
+
+/* ==========================================================================
+ * 九宫格拖拽排序 —— 数据驱动（LazyListState）
+ * 手势层只负责识别长按与跟手浮层（avatar）；换位全部通过数据接口完成：
+ *   长按 500ms → imgList.beginDrag(i)     源格变空槽
+ *   跨格移动  → imgList.move(drag, target) 列表实时重排（FLIP 让位动画）
+ *   松手      → imgList.endDrag()          空槽落位
+ * ========================================================================== */
+let tileGesture = null;           /* 进行中的手势 */
+let tileClickSuppressed = false;  /* 拖拽/滑动后抑制随之而来的 click（防误开预览） */
+
+/* 静态几何计算落点格索引：不读 DOM 实时矩形 —— FLIP 让位动画中矩形
+   处于中间态，按实时矩形找最近格会来回误判（自激抖动）。
+   网格 3 列固定，格子几何与动画无关，直接按坐标换算 */
+function tileIndexFromPoint(x, y) {
+  const grid = $('imgGrid');
+  const g = grid.getBoundingClientRect();
+  const cols = 3;
+  const rows = Math.ceil(imgList.size / cols);
+  if (rows === 0) return -1;
+  const cw = g.width / cols, ch = g.height / rows;
+  const col = Math.floor((x - g.left) / cw);
+  const row = Math.floor((y - g.top) / ch);
+  /* 网格内：直接换算；略越界（半格容差）：钳制到边缘格；远离：无效 */
+  if (col >= 0 && col < cols && row >= 0 && row < rows) {
+    return Math.min(imgList.size - 1, row * cols + col);
+  }
+  if (x >= g.left - 40 && x <= g.right + 40 && y >= g.top - 40 && y <= g.bottom + 40) {
+    const c = Math.min(cols - 1, Math.max(0, col));
+    const r = Math.min(rows - 1, Math.max(0, row));
+    return Math.min(imgList.size - 1, r * cols + c);
+  }
+  return -1;
+}
+
+function startTileGesture(tile, idx, x, y) {
+  if (tileGesture) return;  /* 已有手势进行中（多指），忽略 */
+  tileGesture = {
+    tile, idx, startX: x, startY: y,
+    longTimer: null, dragging: false, moved: false,
+    avatar: null, grabDX: 0, grabDY: 0
+  };
+  tileGesture.longTimer = setTimeout(() => {
+    enterImgEdit();
+    beginTileDrag(tileGesture);
+  }, 500);
+  window.addEventListener('pointermove', onTilePointerMove);
+  window.addEventListener('pointerup', onTilePointerUp);
+  window.addEventListener('pointercancel', onTilePointerCancel);
+}
+
+/* 长按成立：克隆源格做跟手 avatar（放大 1.1 倍 + 阴影），
+   再通过数据接口进入拖拽会话 → 空槽渲染（顺序不能反，克隆要在重渲染前） */
+function beginTileDrag(g) {
+  g.dragging = true;
+  const r = g.tile.getBoundingClientRect();
+  g.grabDX = g.startX - r.left;
+  g.grabDY = g.startY - r.top;
+  const avatar = g.tile.cloneNode(true);
+  avatar.classList.add('drag-ghost');
+  /* 基础位置固定在源格，跟手位移走 transform（合成层，不触发布局重排） */
+  avatar.style.cssText += 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;' +
+    'width:' + r.width + 'px;height:' + r.height + 'px;z-index:999;pointer-events:none;will-change:transform;';
+  document.body.appendChild(avatar);
+  g.avatar = avatar;
+  document.body.classList.add('tile-dragging');
+  imgList.beginDrag(g.idx);   /* 数据接口：进入拖拽会话 */
+}
+
+function onTilePointerMove(e) {
+  const g = tileGesture;
+  if (!g) return;
+  /* 未进入拖拽：位移超阈值即判定滑动，取消长按（不误触发） */
+  if (!g.dragging) {
+    if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) >= 8) {
+      clearTimeout(g.longTimer);
+      g.moved = true;
+    }
+    return;
+  }
+  if (e.cancelable) e.preventDefault();
+  /* avatar 跟手（transform 仅合成层；带上放大，避免覆盖 CSS 的 scale(1.1)） */
+  g.avatar.style.transform = 'translate(' + (e.clientX - g.startX) + 'px,' + (e.clientY - g.startY) + 'px) scale(1.1)';
+  /* 静态几何落点：跨格 → 数据接口实时换位，列表即时重排（其他项 FLIP 让位） */
+  const to = tileIndexFromPoint(e.clientX, e.clientY);
+  if (to >= 0) imgList.move(imgList.dragIndex, to);
+}
+
+function onTilePointerUp(e) { endTileGesture(e, false); }
+function onTilePointerCancel(e) { endTileGesture(e, true); }
+
+function endTileGesture(e, cancelled) {
+  const g = tileGesture;
+  if (!g) return;
+  tileGesture = null;
+  clearTimeout(g.longTimer);
+  window.removeEventListener('pointermove', onTilePointerMove);
+  window.removeEventListener('pointerup', onTilePointerUp);
+  window.removeEventListener('pointercancel', onTilePointerCancel);
+
+  /* 拖拽或滑动过后抑制 click（click 在 pointerup 后触发，防拖完误开预览） */
+  if (g.dragging || g.moved) {
+    tileClickSuppressed = true;
+    setTimeout(() => { tileClickSuppressed = false; }, 100);
+  }
+
+  if (!g.dragging) return;
+  /* 清理跟手浮层 */
+  if (g.avatar) g.avatar.remove();
+  document.body.classList.remove('tile-dragging');
+  /* 系统打断：通过数据接口回退到起始位置 */
+  if (cancelled && imgList.dragIndex >= 0 && imgList.dragIndex !== g.idx) {
+    imgList.move(imgList.dragIndex, g.idx);
+  }
+  imgList.endDrag();   /* 数据接口：结束会话，空槽落位 */
 }
 
 /* 选中的图压缩成 dataURL，便于 localStorage 持久化 */
@@ -335,11 +483,11 @@ function restoreDraftIfAny() {
     editor.innerHTML = d.html || '';
     editor.classList.toggle('is-empty', !getContentText());
     state.images = (d.images || []).map(u => ({ url: u, dataUrl: u }));
+    imgList.reset(state.images);   /* 数据接口：整表恢复（自动重渲染） */
     state.visibility = d.visibility || 'public';
     state.location = d.location || null;
     /* AI 声明从草稿恢复（内容属性）；定时/自动删除不恢复，保持默认关 */
     if (d.aiDeclare) pubSettings.aiDeclare = true;
-    renderImages();
     updateVisLabel();
     updateLocVal();
     refreshState();
