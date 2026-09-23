@@ -42,6 +42,7 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  overscroll-behavior-y: contain;  /* 顶部下拉不回弹串扰，交给下拉刷新处理 */
 }
 .screen-scroll::-webkit-scrollbar { display: none; }
 

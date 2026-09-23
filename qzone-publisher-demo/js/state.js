@@ -39,3 +39,27 @@ function saveDraft() {
   try { localStorage.setItem(LS_DRAFT, JSON.stringify(d)); } catch (e) {}
 }
 function clearDraft() { try { localStorage.removeItem(LS_DRAFT); } catch (e) {} }
+
+/* ==========================================================================
+ * 顶部信息 toast（白色胶囊 + 图标，顶部居中，对齐真机截图）
+ *   type = 'info'    → 蓝色圆形 ⓘ（如"时光机不能回到过去"）
+ *   type = 'success' → 绿色圆形 ✓（如"定时说说设置成功"）
+ * ========================================================================== */
+let _topToastEl = null, _topToastTimer = null;
+function showTopToast(type, msg) {
+  if (!_topToastEl) {
+    _topToastEl = document.createElement('div');
+    _topToastEl.className = 'top-toast';
+    _topToastEl.innerHTML = '<span class="top-toast-ic"></span><span class="top-toast-tx"></span>';
+    (document.querySelector('.phone-screen') || document.body).appendChild(_topToastEl);
+  }
+  const ic = _topToastEl.querySelector('.top-toast-ic');
+  ic.className = 'top-toast-ic ' + type;
+  ic.innerHTML = type === 'success'
+    ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 10 18.5 20 6"/></svg>'
+    : 'i';
+  _topToastEl.querySelector('.top-toast-tx').textContent = msg;
+  _topToastEl.classList.add('show');
+  clearTimeout(_topToastTimer);
+  _topToastTimer = setTimeout(() => _topToastEl.classList.remove('show'), 1800);
+}

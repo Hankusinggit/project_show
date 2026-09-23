@@ -159,6 +159,7 @@ function resetEditor() {
   state.location = null;
   imgEditing = false;
   pubSettings.scheduled = false;
+  pubSettings.scheduledTime = null;
   pubSettings.autoDelete = false;
   pubSettings.aiDeclare = false;
   updateVisLabel();
@@ -511,6 +512,10 @@ function doPublish() {
   btn.classList.add('busy');
   btn.textContent = '发布中…';
 
+  /* 防御：开关已开但未选时间（异常路径）→ 兜底 now+1h，避免被当成普通发表立即发出 */
+  let schedTime = pubSettings.scheduledTime;
+  if (pubSettings.scheduled && !schedTime) schedTime = Date.now() + 3600e3;
+  const isScheduled = pubSettings.scheduled && schedTime;
   setTimeout(() => {
     const posts = loadPosts();
     posts.unshift({
@@ -520,7 +525,9 @@ function doPublish() {
       images: state.images.map(i => i.isVideo ? i.videoSrc : i.dataUrl),
       visibility: state.visibility,
       location: state.location,
-      time: Date.now(),
+      /* 定时发表：展示时间=定时时间，并记录 scheduledAt 供 feed 到点前隐藏 */
+      time: isScheduled ? schedTime : Date.now(),
+      scheduledAt: isScheduled ? schedTime : null,
       likes: 0,
       comments: 0,
     });
@@ -532,7 +539,9 @@ function doPublish() {
     btn.textContent = '发表';
     closePublisher();
     renderFeed();
-    toast('发表成功 🎉');
+    /* 定时发表：绿色 ✓ 顶部 toast（对齐真机截图）；普通发表沿用深色 toast */
+    if (isScheduled) showTopToast('success', '定时说说设置成功');
+    else toast('发表成功 🎉');
     $('screenScroll').scrollTo({ top: 0, behavior: 'smooth' });
   }, 700);
 }
@@ -584,7 +593,7 @@ function toggleSync(which) {
 
 /* 子页面状态：发表设置开关（scheduled/autoDelete 不随草稿持久化，
    aiDeclare 是内容属性，随草稿保存/恢复——对齐真机设计） */
-const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false };
+const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false, scheduledTime: null };
 
 /* 发表设置行右侧文案动态拼接：
    - 只有定时开 → 显示具体时间
@@ -603,11 +612,21 @@ function updateSettingsLabel() {
   el.textContent = parts.join('/');
 }
 
-/* 定时时间格式化（暂用当前时间+1小时占位，日期选择器在第三批实现） */
-function formatScheduleTime() {
-  const d = new Date(Date.now() + 3600e3);
+/* 定时时间格式化（真实值，来自滚轮选择器写入的 scheduledTime） */
+function _scheduleParts() {
+  const d = new Date(pubSettings.scheduledTime || Date.now() + 3600e3);
   const p = n => String(n).padStart(2, '0');
-  return p(d.getMonth() + 1) + '月' + p(d.getDate()) + '日 ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ' 发表';
+  return { y: d.getFullYear(), mo: p(d.getMonth() + 1), dd: p(d.getDate()), hh: p(d.getHours()), mm: p(d.getMinutes()) };
+}
+/* 发布器行右侧文案：「09月23日 17:52 发表」（不带年份） */
+function formatScheduleTime() {
+  const s = _scheduleParts();
+  return s.mo + '月' + s.dd + '日 ' + s.hh + ':' + s.mm + ' 发表';
+}
+/* 发表设置页内回显：「2026年09月23日 17:52」（带年份） */
+function formatScheduleTimeFull() {
+  const s = _scheduleParts();
+  return s.y + '年' + s.mo + '月' + s.dd + '日 ' + s.hh + ':' + s.mm;
 }
 
 function showSubpage(kind) {
@@ -675,7 +694,11 @@ function buildVisPage() {
 /* 发表设置页面（按截图：定时发表+自动删除 在同一张卡里，
    AI 声明 独立一张卡，下面带灰色描述） */
 function buildSettingsPage() {
-  /* 第一张卡：定时发表 + 发表24小时自动删除（共享一张卡，中间分割线） */
+  /* 第一张卡：定时发表 + 发表24小时自动删除（共享一张卡，中间分割线）
+     定时开启时，开关下方回显所选时间（带年份，对齐真机截图） */
+  const timeRow = pubSettings.scheduled
+    ? '<div class="sub-time-row">' + formatScheduleTimeFull() + '</div>'
+    : '';
   const card1 = `
     <div class="sub-group">
       <div class="sub-switch-row" data-key="scheduled">
@@ -683,6 +706,7 @@ function buildSettingsPage() {
         <span class="label">定时发表</span>
         <span class="switch${pubSettings.scheduled ? ' on' : ''}"></span>
       </div>
+      ${timeRow}
       <div class="sub-switch-row" data-key="autoDelete">
         <svg class="sub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
         <span class="label">发表24小时后自动删除</span>
@@ -731,10 +755,20 @@ document.addEventListener('DOMContentLoaded', () => {
       hideSubpage();
       return;
     }
+    /* 发表设置：点击时间回显行 → 重新唤起选择器修改时间 */
+    if (e.target.closest('.sub-time-row')) {
+      _openSchedulePicker(false);
+      return;
+    }
     /* 发表设置：点击开关行 */
     const swRow = e.target.closest('.sub-switch-row[data-key]');
     if (swRow) {
       const key = swRow.dataset.key;
+      /* 定时发表特殊处理：先点亮开关再弹滚轮选择器（对齐真机截图流程） */
+      if (key === 'scheduled') {
+        _openSchedulePicker(!pubSettings.scheduled);
+        return;
+      }
       pubSettings[key] = !pubSettings[key];
       const sw = swRow.querySelector('.switch');
       if (sw) sw.classList.toggle('on');
@@ -743,3 +777,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/* 唤起定时滚轮选择器：wasOff = 本次是否首次开启（取消时据此回退开关） */
+function _openSchedulePicker(wasOff) {
+  pubSettings.scheduled = true;   /* 开关先点亮 */
+  _refreshSettingsPage();
+  openWheelPicker({
+    defaultTime: pubSettings.scheduledTime,
+    minTime: Date.now() + 60e3,
+    maxTime: Date.now() + 10 * 86400e3,
+    onConfirm: d => {
+      pubSettings.scheduledTime = d.getTime();
+      pubSettings.scheduled = true;
+      _refreshSettingsPage();
+      updateSettingsLabel();
+    },
+    onCancel: () => {
+      if (wasOff) pubSettings.scheduled = false;   /* 首次开启又取消 → 回退 */
+      _refreshSettingsPage();
+      updateSettingsLabel();
+    }
+  });
+}
+
+/* 重渲染发表设置子页面（开关/时间行变化后）并重绑返回按钮 */
+function _refreshSettingsPage() {
+  const sub = document.getElementById('pubSubpage');
+  if (!sub) return;
+  sub.innerHTML = buildSettingsPage();
+  const back = sub.querySelector('.sub-back');
+  if (back) back.addEventListener('click', hideSubpage);
+}

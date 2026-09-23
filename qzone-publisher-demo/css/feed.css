@@ -198,3 +198,17 @@
   background: rgba(0, 0, 0, 0.45);
   color: #fff; display: grid; place-items: center;
 }
+
+/* ==========================================================================
+   下拉刷新指示器：spinner 位于 app 顶端之上，下拉时随内容下移露出
+   ========================================================================== */
+.ptr { position: relative; height: 0; }
+.ptr-spinner {
+  position: absolute; top: -46px; left: 50%; margin-left: -14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid rgba(123, 92, 255, 0.18);
+  border-top-color: #7B5CFF;   /* 紫蓝色弧，贴近真机转圈 */
+  opacity: 0;
+}
+.ptr-spinner.loading { opacity: 1; animation: ptrspin 0.8s linear infinite; }
+@keyframes ptrspin { to { transform: rotate(360deg); } }
