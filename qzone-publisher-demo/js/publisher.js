@@ -21,7 +21,7 @@ const PUB_VIEW_HTML = `
             <span class="photo-cap">照片/视频</span>
           </button>
           <div class="quick-row">
-            <button onclick="openSheet('at')">
+            <button onclick="AtInput.openSelector()">
               @好友
             </button>
             <button onclick="openSheet('topic')">
@@ -153,6 +153,7 @@ function openDraftSheet() {
 function resetEditor() {
   editor.innerHTML = '';
   editor.classList.add('is-empty');
+  AtDetect.reset('');   /* 外部清空内容时同步 @ 检测基线，避免下次输入误判 */
   state.images = [];
   imgList.reset(state.images);   /* 数据接口：整表清空（自动重渲染） */
   state.visibility = 'public';
@@ -190,6 +191,9 @@ function initEditorEvents() {
     const t = (e.clipboardData || window.clipboardData).getData('text/plain');
     document.execCommand('insertText', false, t);
   });
+
+  /* @好友三段算法接线：输入检测唤起选择好友页 / 整段删除 / 同名分配 */
+  AtInput.init(editor, () => DATA.friends, () => showSubpage('at'));
 
   /* 图片九宫格：删除走角标，添加走照片卡 */
   $('imgGrid').addEventListener('click', e => {
@@ -483,6 +487,7 @@ function restoreDraftIfAny() {
   if (hasText || hasImages) {
     editor.innerHTML = d.html || '';
     editor.classList.toggle('is-empty', !getContentText());
+    AtDetect.reset(editor.textContent);   /* 草稿恢复后同步 @ 检测基线 */
     state.images = (d.images || []).map(u => ({ url: u, dataUrl: u }));
     imgList.reset(state.images);   /* 数据接口：整表恢复（自动重渲染） */
     state.visibility = d.visibility || 'public';
@@ -641,15 +646,98 @@ function showSubpage(kind) {
 
   if (kind === 'vis') {
     sub.innerHTML = buildVisPage();
+    sub.querySelector('.sub-back').addEventListener('click', hideSubpage);
   } else if (kind === 'settings') {
     sub.innerHTML = buildSettingsPage();
+    sub.querySelector('.sub-back').addEventListener('click', hideSubpage);
+  } else if (kind === 'at') {
+    sub.innerHTML = buildAtPage();
+    bindAtPage(sub);
   }
-
-  /* 绑定返回箭头 */
-  sub.querySelector('.sub-back').addEventListener('click', hideSubpage);
 
   /* 触发滑入动画 */
   requestAnimationFrame(() => sub.classList.add('show'));
+}
+
+/* 头像 HTML（模板用，等价 avatarEl 的字符串版） */
+function avatarHTML(a) {
+  if (a.img) return '<div class="avatar"><img src="' + a.img + '" alt=""></div>';
+  return '<div class="avatar" style="background:' + a.bg + '">' + (a.emoji || '') + '</div>';
+}
+
+/* 选择好友页（对齐真机截图：取消/选择好友/完成 + 搜索 + 特别关心/我的好友 + 单选圈） */
+function buildAtPage() {
+  const special = DATA.friends.filter(f => f.special);
+  const normal = DATA.friends.filter(f => !f.special);
+  const row = f => {
+    const idx = DATA.friends.indexOf(f);
+    return '<div class="at-row" data-idx="' + idx + '"><span class="at-radio"></span>' +
+      avatarHTML(f.avatar) + '<span class="at-name">' + escapeHtml(f.name) + '</span></div>';
+  };
+  const section = (title, list, open) =>
+    '<div class="at-section" data-open="' + open + '">' +
+    '<div class="at-sec-head"><span>' + title + '</span>' +
+    '<span class="at-sec-count">' + list.length + ' <i class="at-chev">' + (open ? '∧' : '∨') + '</i></span></div>' +
+    '<div class="at-sec-list">' + list.map(row).join('') + '</div></div>';
+  return `
+    <div class="at-head">
+      <button class="at-cancel">取消</button>
+      <h3>选择好友</h3>
+      <button class="at-done">完成</button>
+    </div>
+    <div class="at-search"><input id="atSearch" placeholder="搜索" autocomplete="off"></div>
+    <div class="at-body">
+      ${section('特别关心', special, false)}
+      ${section('我的好友', normal, true)}
+    </div>
+  `;
+}
+
+/* 选择好友页交互：单选圈切换 / 分组折叠 / 搜索过滤 / 完成批量插入 */
+function bindAtPage(sub) {
+  const selectedOrder = [];   /* 选中顺序（先点谁先插谁） */
+
+  sub.querySelector('.at-cancel').addEventListener('click', hideSubpage);
+
+  /* 完成：按选择顺序批量插入提及（光标依次后移，保证顺序） */
+  sub.querySelector('.at-done').addEventListener('click', () => {
+    selectedOrder.forEach(idx => {
+      AtInput.insertMention(DATA.friends[idx]);
+      const s = window.getSelection();
+      if (s.rangeCount) AtInput.savedCaret = s.getRangeAt(0).cloneRange();
+    });
+    hideSubpage();
+  });
+
+  /* 分组折叠 */
+  sub.querySelectorAll('.at-sec-head').forEach(h => {
+    h.addEventListener('click', () => {
+      const sec = h.parentElement;
+      const open = sec.dataset.open === 'true';
+      sec.dataset.open = String(!open);
+      h.querySelector('.at-chev').textContent = open ? '∨' : '∧';
+    });
+  });
+
+  /* 单选圈切换（记录选择顺序） */
+  sub.querySelectorAll('.at-row').forEach(r => {
+    r.addEventListener('click', () => {
+      const idx = +r.dataset.idx;
+      const pos = selectedOrder.indexOf(idx);
+      if (pos >= 0) selectedOrder.splice(pos, 1);
+      else selectedOrder.push(idx);
+      r.querySelector('.at-radio').classList.toggle('on', pos < 0);
+    });
+  });
+
+  /* 搜索过滤（按昵称子串，隐藏不匹配行） */
+  sub.querySelector('#atSearch').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    sub.querySelectorAll('.at-row').forEach(r => {
+      const name = DATA.friends[+r.dataset.idx].name.toLowerCase();
+      r.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+  });
 }
 
 function hideSubpage() {

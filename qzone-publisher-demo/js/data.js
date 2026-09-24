@@ -11,6 +11,8 @@ const DATA = {
     { name: 'Momo',   avatar: { img: 'assets/avatar-momo.jpg' } },
     { name: '老王',   avatar: { img: 'assets/avatar-laowang.jpg' } },
     { name: 'Kevin',  avatar: { img: 'assets/avatar-kevin.jpg' } },
+    /* 同名好友：演示 @ 提及的顺序分配（第 k 次 @小林 → 第 k 个小林，耗尽兜底纯文本） */
+    { name: '小林',   avatar: { bg: 'linear-gradient(135deg,#FFB86B,#FF6B9D)', emoji: '🐻' } },
   ],
 
   topics: ['日常分享', '加班日记', '周末去哪儿', '今天吃什么', '撸猫日常', '旅行碎片'],

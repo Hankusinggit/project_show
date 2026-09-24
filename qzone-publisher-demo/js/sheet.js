@@ -57,22 +57,7 @@ function openSheet(kind) {
     s.appendChild(custom);
   }
 
-  if (kind === 'at') {
-    title.textContent = '提醒好友';
-    DATA.friends.forEach(f => {
-      const d = document.createElement('button');
-      d.className = 'sh-row';
-      d.appendChild(avatarEl(f.avatar));
-      const nm = document.createElement('span');
-      nm.textContent = f.name;
-      d.appendChild(nm);
-      d.onclick = () => {
-        insertHTML('<span class="tag" contenteditable="false">@' + escapeHtml(f.name) + '</span> ');
-        closeSheet();
-      };
-      s.appendChild(d);
-    });
-  }
+  /* @好友已升级为全屏「选择好友」子页面（publisher.js buildAtPage），此处不再处理 */
 
   if (kind === 'settings') {
     title.textContent = '发表设置';

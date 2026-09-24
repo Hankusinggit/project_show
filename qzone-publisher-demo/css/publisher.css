@@ -355,6 +355,60 @@ body.tile-dragging { user-select: none; -webkit-user-select: none; cursor: grabb
 }
 .wheel-item.on { color: var(--ink); font-weight: 400; }  /* 选中仅加深颜色，不加粗 */
 
+/* ==========================================================================
+   选择好友页（@好友全屏选择：取消/选择好友/完成 + 搜索 + 分组 + 单选圈）
+   ========================================================================== */
+.at-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: var(--card);
+}
+.at-head h3 { flex: 1; text-align: center; font-size: 17px; font-weight: 600; color: var(--ink); margin: 0; }
+.at-cancel { font-size: 16px; color: var(--ink-2); background: none; border: 0; padding: 4px; }
+.at-done {
+  font-size: 15px; color: #fff; background: var(--blue);
+  border: 0; border-radius: 999px; padding: 7px 18px; font-weight: 500;
+}
+.at-done:active { opacity: 0.85; }
+
+.at-search { position: relative; padding: 0 16px 12px; background: var(--card); }
+.at-search::before {
+  content: '🔍'; position: absolute; left: 28px; top: 50%;
+  transform: translateY(calc(-50% - 6px)); font-size: 13px; opacity: 0.5; pointer-events: none;
+}
+.at-search input {
+  width: 100%; box-sizing: border-box;
+  background: #F5F5F7; border: 0; border-radius: 10px;
+  padding: 9px 12px 9px 36px; font-size: 15px; color: var(--ink); outline: none;
+}
+.at-search input::placeholder { color: var(--ink-3); }
+
+.at-body { flex: 1; overflow-y: auto; padding: 4px 0 24px; }
+.at-section { margin-top: 8px; }
+.at-sec-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.at-sec-count { font-size: 13px; font-weight: 400; color: var(--ink-3); }
+.at-sec-count .at-chev { font-style: normal; margin-left: 2px; }
+.at-section[data-open="false"] .at-sec-list { display: none; }
+.at-sec-list { padding: 2px 0; }
+
+.at-row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; cursor: pointer; }
+.at-row:active { background: var(--tile); }
+.at-radio {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.6px solid #D8D8E0; flex: none; position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+.at-radio.on { background: var(--blue); border-color: var(--blue); }
+.at-radio.on::after {
+  content: ''; position: absolute; left: 6px; top: 3px;
+  width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.at-row .avatar { width: 44px; height: 44px; font-size: 20px; flex: none; }
+.at-name { font-size: 16px; color: var(--ink); }
+
 /* 顶部信息 toast（白色胶囊 + 图标，顶部居中，对齐真机截图；滚轮/发布器共用） */
 .top-toast {
   position: absolute; top: 54px; left: 50%; z-index: 900;
