@@ -425,3 +425,50 @@ function doDelete() {
     }, { passive: false });
   });
 })();
+
+/* ==========================================================================
+ * 长图模式查看器：黑底竖向滚动，图片按原始宽高比依次堆叠
+ *   底部操作：重新选图 / 取消长图
+ * ========================================================================== */
+/* opts.publisher = true：发布器内预览（显示"重新选图/取消长图"操作栏）；
+   false（feed 已发布帖子）：只给关闭按钮，不改动发布器状态 */
+function openLongImageViewer(urls, opts) {
+  opts = opts || {};
+  const publisher = !!opts.publisher;
+  let v = document.getElementById('longImgViewer');
+  if (!v) {
+    v = document.createElement('div');
+    v.className = 'longimg-viewer';
+    v.id = 'longImgViewer';
+    v.innerHTML =
+      '<button class="longimg-close" id="longImgClose">✕</button>' +
+      '<div class="longimg-scroll" id="longImgScroll"></div>' +
+      '<div class="longimg-bar" id="longImgBar">' +
+      '<button id="longImgRepick">重新选图</button>' +
+      '<button id="longImgCancel">取消长图</button>' +
+      '</div>';
+    document.getElementById('viewer').parentElement.appendChild(v);
+    v.querySelector('#longImgClose').addEventListener('click', closeLongImageViewer);
+    v.querySelector('#longImgRepick').addEventListener('click', () => {
+      closeLongImageViewer();
+      pickImages();   /* 重新选图 */
+    });
+    v.querySelector('#longImgCancel').addEventListener('click', () => {
+      pubSettings.longImage = false;
+      updateLongImageCard();
+      renderImages();   /* 恢复九宫格全部缩略图 */
+      closeLongImageViewer();
+    });
+  }
+  /* 操作栏仅发布器内显示；feed 预览只保留关闭按钮 */
+  v.querySelector('#longImgBar').style.display = publisher ? '' : 'none';
+  const sc = v.querySelector('#longImgScroll');
+  sc.innerHTML = urls.map(u => '<img src="' + u + '" alt="">').join('');
+  sc.scrollTop = 0;
+  v.classList.add('show');
+}
+
+function closeLongImageViewer() {
+  const v = document.getElementById('longImgViewer');
+  if (v) v.classList.remove('show');
+}

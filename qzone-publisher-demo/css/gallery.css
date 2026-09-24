@@ -119,3 +119,35 @@
 }
 #viewerConfirmCancel { color: #007AFF; }
 #viewerConfirmOk { color: #FA5151; border-left: 1px solid #E5E5EA; }
+
+/* ==========================================================================
+   长图模式查看器：黑底竖向滚动，图片按原始宽高比堆叠
+   ========================================================================== */
+.longimg-viewer {
+  position: absolute; inset: 0; z-index: 300;
+  background: #000; display: none; flex-direction: column;
+}
+.longimg-viewer.show { display: flex; }
+.longimg-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.longimg-scroll::-webkit-scrollbar { display: none; }
+.longimg-scroll img { width: 100%; display: block; }   /* 满宽 + 高度自适应 = 原始宽高比 */
+.longimg-bar {
+  display: flex; gap: 12px; padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: rgba(0, 0, 0, 0.72);
+}
+.longimg-bar button {
+  flex: 1; padding: 12px 0; border: 0; border-radius: 10px;
+  font-size: 15px; font-weight: 500; cursor: pointer;
+}
+#longImgRepick { background: rgba(255, 255, 255, 0.16); color: #fff; }
+#longImgRepick:active { background: rgba(255, 255, 255, 0.28); }
+#longImgCancel { background: #fff; color: var(--ink); }
+#longImgCancel:active { opacity: 0.85; }
+.longimg-close {
+  position: absolute; top: 50px; right: 16px; z-index: 2;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); color: #fff; border: 0;
+  font-size: 18px; line-height: 32px; text-align: center; cursor: pointer;
+}
+.longimg-close:active { background: rgba(255,255,255,0.3); }

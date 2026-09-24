@@ -59,6 +59,15 @@ const PUB_VIEW_HTML = `
         </div>
       </div>
 
+      <!-- 长图模式：≥3 张图且无视频时显示（与原画卡互斥，同槽位） -->
+      <div class="pub-card li-card" id="liCard" style="display:none">
+        <div class="opt" onclick="toggleLongImage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/></svg>
+          <span>照片使用长图模式</span>
+          <span class="switch" id="liSwitch"></span>
+        </div>
+      </div>
+
       <div class="sync-entries">
         <div class="sync-item" id="syncSig" onclick="toggleSync('signature')">
           <button class="sync-circle" aria-label="同步到个性签名">
@@ -173,11 +182,13 @@ function resetEditor() {
   pubSettings.autoDelete = false;
   pubSettings.aiDeclare = false;
   pubSettings.originalQuality = false;   /* 原画开关不随草稿持久化，每次进入默认关 */
+  pubSettings.longImage = false;         /* 长图模式不随草稿持久化，每次进入默认关 */
   updateVisLabel();
   updateLocVal();
   refreshState();
   updateSettingsLabel();
   updateOriginalQualityCard();
+  updateLongImageCard();
 }
 
 function getContentText() {
@@ -217,11 +228,15 @@ function initEditorEvents() {
   /* 列表数据驱动渲染：imgList 的一切变更（增/删/换位/拖拽会话）自动重渲染 */
   imgList.onChange(renderImages);
 
-  /* 原画开关守卫：已选内容不含视频时强制关闭，防止"已勾选但开关不可见"的脏状态提交 */
+  /* 开关守卫：内容变化时清理不再成立的开关状态，防止"已勾选但不可见"的脏状态提交 */
   imgList.onChange(() => {
     const hasVideo = imgList.items.some(it => it.isVideo);
     if (!hasVideo && pubSettings.originalQuality) pubSettings.originalQuality = false;
+    /* 长图模式：少于 3 张或含视频时强制关闭 */
+    const longEligible = imgList.size >= 3 && !hasVideo;
+    if (!longEligible && pubSettings.longImage) pubSettings.longImage = false;
     updateOriginalQualityCard();   /* 含视频显隐 + 开关状态实时同步 */
+    updateLongImageCard();         /* 长图卡显隐 + 开关状态实时同步 */
   });
 }
 
@@ -277,6 +292,9 @@ function renderImages() {
   /* 保持编辑态 class */
   g.classList.toggle('editing', imgEditing);
 
+  /* 长图模式：≥3 张图且无视频且开关开启 → 只显首图缩略图 + 徽标，隐藏添加入口 */
+  const longMode = pubSettings.longImage && imgList.size >= 3 && !imgList.items.some(it => it.isVideo);
+
   /* 有图时隐藏大方块入口（九宫格内有小方块），无图时显示 */
   const bigBtn = $('photoCardBtn');
   if (bigBtn) bigBtn.style.display = imgList.size > 0 ? 'none' : '';
@@ -288,7 +306,8 @@ function renderImages() {
   });
 
   g.innerHTML = '';
-  imgList.items.forEach((img, i) => {
+  const renderItems = longMode ? imgList.items.slice(0, 1) : imgList.items;
+  renderItems.forEach((img, i) => {
     const t = document.createElement('div');
     t.className = 'img-tile';
     t.dataset.idx = i;
@@ -301,13 +320,19 @@ function renderImages() {
         '<span class="tile-dur">0:' + String(img.duration || 10).padStart(2, '0') + '</span>' +
         '<button class="del" data-i="' + i + '">×</button>';
     } else {
-      t.innerHTML = '<img src="' + img.url + '" alt="" draggable="false"><button class="del" data-i="' + i + '">×</button>';
+      t.innerHTML = '<img src="' + img.url + '" alt="" draggable="false"><button class="del" data-i="' + i + '">×</button>' +
+        (longMode ? '<span class="longimg-badge">长图模式</span>' : '');
     }
-    /* 点击图片 → 全屏预览（发布器模式，可删除）；拖拽/滑动后的点击被抑制 */
+    /* 点击图片 → 全屏预览；长图模式开启且满足条件时走竖向长图查看器 */
     t.querySelector('img').addEventListener('click', e => {
       e.stopPropagation();
       if (tileClickSuppressed) return;
       const urls = imgList.items.map(it => it.isVideo ? it.videoSrc : it.dataUrl);
+      const longEligible = pubSettings.longImage && imgList.size >= 3 && !imgList.items.some(it => it.isVideo);
+      if (longEligible) {
+        openLongImageViewer(urls, { publisher: true });
+        return;
+      }
       openViewer(urls, i, {
         onDelete: (removedIdx, remaining) => {
           imgList.remove(removedIdx);
@@ -326,8 +351,9 @@ function renderImages() {
     g.appendChild(t);
   });
 
-  /* 照片/视频小方块：有图且未满 9 张时追加在九宫格末尾（无图时由大方块入口负责） */
-  if (imgList.size > 0 && imgList.size < 9) {
+  /* 照片/视频小方块：有图且未满 9 张时追加在九宫格末尾（无图时由大方块入口负责）；
+     长图模式下隐藏添加入口 */
+  if (!longMode && imgList.size > 0 && imgList.size < 9) {
     const addTile = document.createElement('div');
     addTile.className = 'img-tile img-add-tile';
     addTile.innerHTML = '<button class="photo-card-inline" onclick="pickImages()">' +
@@ -551,6 +577,8 @@ function doPublish() {
       /* 定时发表：展示时间=定时时间，并记录 scheduledAt 供 feed 到点前隐藏 */
       time: isScheduled ? schedTime : Date.now(),
       scheduledAt: isScheduled ? schedTime : null,
+      /* 长图模式：feed 只显首图 + 徽标，点击进竖向长图查看器 */
+      longImage: pubSettings.longImage && state.images.length >= 3 && !state.images.some(i => i.isVideo),
       likes: 0,
       comments: 0,
     });
@@ -616,7 +644,7 @@ function toggleSync(which) {
 
 /* 子页面状态：发表设置开关（scheduled/autoDelete 不随草稿持久化，
    aiDeclare 是内容属性，随草稿保存/恢复——对齐真机设计） */
-const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false, scheduledTime: null, originalQuality: false };
+const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false, scheduledTime: null, originalQuality: false, longImage: false };
 
 /* 发表设置行右侧文案动态拼接：
    - 只有定时开 → 显示具体时间
@@ -859,6 +887,23 @@ function updateOriginalQualityCard() {
 function toggleOriginalQuality() {
   pubSettings.originalQuality = !pubSettings.originalQuality;
   updateOriginalQualityCard();
+}
+
+/* 长图模式卡（主页）：≥3 张图且无视频时显示，并同步开关状态 */
+function updateLongImageCard() {
+  const card = $('liCard');
+  if (!card) return;
+  const eligible = imgList.size >= 3 && !imgList.items.some(it => it.isVideo);
+  card.style.display = eligible ? '' : 'none';
+  const sw = $('liSwitch');
+  if (sw) sw.classList.toggle('on', pubSettings.longImage);
+}
+
+/* 点击长图行切换开关 */
+function toggleLongImage() {
+  pubSettings.longImage = !pubSettings.longImage;
+  updateLongImageCard();
+  renderImages();   /* 九宫格随之切换：长图模式只显首图+徽标，关闭则恢复全部 */
 }
 
 /* 子页面事件委托：点击选项行切换可见性 / 点击开关行切换设置 */

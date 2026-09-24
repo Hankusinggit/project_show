@@ -89,6 +89,13 @@
 
 /* 拖拽排序（数据驱动）：被拖项格子 → 纯空隙（不画任何内容，其他图实时避让滑动） */
 .img-tile.drag-src > * { visibility: hidden; }
+/* 长图模式徽标：缩略图右下角，半透明灰底白字（发布器与 feed 共用） */
+.longimg-badge {
+  position: absolute; right: 6px; bottom: 6px; z-index: 2;
+  background: rgba(0, 0, 0, 0.45); color: #fff;
+  font-size: 11px; line-height: 1.4; padding: 2px 7px; border-radius: 6px;
+  pointer-events: none;
+}
 .img-tile.drag-ghost {
   transform: scale(1.1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -131,6 +138,8 @@ body.tile-dragging { user-select: none; -webkit-user-select: none; cursor: grabb
 .opts-card { margin-top: 16px; padding: 5px 0; }
 /* 原画上传卡（黄钻特权，含视频时显示，位于选项卡与同步图标之间） */
 .oq-card { margin-top: 16px; padding: 5px 0; }
+/* 长图模式卡（≥3 张图且无视频时显示，与原画卡互斥同槽位） */
+.li-card { margin-top: 16px; padding: 5px 0; }
 .opt {
   display: flex; align-items: center; gap: 14px;
   height: 58px; padding: 0 20px;

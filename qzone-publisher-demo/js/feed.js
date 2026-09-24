@@ -139,6 +139,24 @@ function postCard(p) {
   const list = (p.images && p.images.length) ? p.images : (p.ph || []);
   if (list.length) {
     const g = document.createElement('div');
+    /* 长图模式：只显首图 + 「长图」徽标，点击进竖向长图查看器 */
+    if (p.longImage) {
+      g.className = 'p-imgs single';
+      const wrap = document.createElement('div');
+      wrap.className = 'feed-longimg';
+      const im = document.createElement('img');
+      im.src = typeof list[0] === 'string' ? list[0] : (list[0].img || list[0]);
+      wrap.appendChild(im);
+      const badge = document.createElement('span');
+      badge.className = 'longimg-badge';
+      badge.textContent = '长图';
+      wrap.appendChild(badge);
+      wrap.style.cursor = 'zoom-in';
+      const urls = list.map(x => typeof x === 'string' ? x : (x.img || x));
+      wrap.addEventListener('click', () => openLongImageViewer(urls));
+      g.appendChild(wrap);
+      card.appendChild(g);
+    } else {
     const solo = list.length === 1;
     const wide = solo && typeof list[0] === 'object' && list[0].wide;
     let gridClass = 'p-imgs';
@@ -196,6 +214,7 @@ function postCard(p) {
       }
     });
     card.appendChild(g);
+    }
   }
 
   /* 赞过的好友预览条（含实时联动：已点赞时 Hank 头像出现在最前面） */

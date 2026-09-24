@@ -212,3 +212,6 @@
 }
 .ptr-spinner.loading { opacity: 1; animation: ptrspin 0.8s linear infinite; }
 @keyframes ptrspin { to { transform: rotate(360deg); } }
+
+/* 长图模式 feed 缩略图：只显首图，右下角徽标 */
+.feed-longimg { position: relative; }
