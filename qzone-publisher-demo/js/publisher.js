@@ -50,6 +50,15 @@ const PUB_VIEW_HTML = `
         </div>
       </div>
 
+      <!-- 原画上传（黄钻特权）：仅当已选内容含视频时显示，位于选项卡与同步图标之间 -->
+      <div class="pub-card oq-card" id="oqCard" style="display:none">
+        <div class="opt" onclick="toggleOriginalQuality()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2.6 21.4 12 12 21.4 2.6 12z" fill="#F7B500" stroke="#E09B00" stroke-width="1.1" stroke-linejoin="round"/><path d="M7.6 7.6h8.8L12 17z" fill="#FFE08A" opacity="0.85"/></svg>
+          <span>上传原画视频</span>
+          <span class="switch" id="oqSwitch"></span>
+        </div>
+      </div>
+
       <div class="sync-entries">
         <div class="sync-item" id="syncSig" onclick="toggleSync('signature')">
           <button class="sync-circle" aria-label="同步到个性签名">
@@ -163,10 +172,12 @@ function resetEditor() {
   pubSettings.scheduledTime = null;
   pubSettings.autoDelete = false;
   pubSettings.aiDeclare = false;
+  pubSettings.originalQuality = false;   /* 原画开关不随草稿持久化，每次进入默认关 */
   updateVisLabel();
   updateLocVal();
   refreshState();
   updateSettingsLabel();
+  updateOriginalQualityCard();
 }
 
 function getContentText() {
@@ -205,6 +216,13 @@ function initEditorEvents() {
 
   /* 列表数据驱动渲染：imgList 的一切变更（增/删/换位/拖拽会话）自动重渲染 */
   imgList.onChange(renderImages);
+
+  /* 原画开关守卫：已选内容不含视频时强制关闭，防止"已勾选但开关不可见"的脏状态提交 */
+  imgList.onChange(() => {
+    const hasVideo = imgList.items.some(it => it.isVideo);
+    if (!hasVideo && pubSettings.originalQuality) pubSettings.originalQuality = false;
+    updateOriginalQualityCard();   /* 含视频显隐 + 开关状态实时同步 */
+  });
 }
 
 function placeCaretEnd() {
@@ -598,7 +616,7 @@ function toggleSync(which) {
 
 /* 子页面状态：发表设置开关（scheduled/autoDelete 不随草稿持久化，
    aiDeclare 是内容属性，随草稿保存/恢复——对齐真机设计） */
-const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false, scheduledTime: null };
+const pubSettings = { scheduled: false, autoDelete: false, aiDeclare: false, scheduledTime: null, originalQuality: false };
 
 /* 发表设置行右侧文案动态拼接：
    - 只有定时开 → 显示具体时间
@@ -825,6 +843,22 @@ function buildSettingsPage() {
       ${card2}
     </div>
   `;
+}
+
+/* 原画上传卡（主页）：按是否含视频显隐，并同步开关状态 */
+function updateOriginalQualityCard() {
+  const card = $('oqCard');
+  if (!card) return;
+  const hasVideo = imgList.items.some(it => it.isVideo);
+  card.style.display = hasVideo ? '' : 'none';
+  const sw = $('oqSwitch');
+  if (sw) sw.classList.toggle('on', pubSettings.originalQuality);
+}
+
+/* 点击原画行切换开关（假开关，纯状态） */
+function toggleOriginalQuality() {
+  pubSettings.originalQuality = !pubSettings.originalQuality;
+  updateOriginalQualityCard();
 }
 
 /* 子页面事件委托：点击选项行切换可见性 / 点击开关行切换设置 */

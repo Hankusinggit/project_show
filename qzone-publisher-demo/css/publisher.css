@@ -129,6 +129,8 @@ body.tile-dragging { user-select: none; -webkit-user-select: none; cursor: grabb
 
 /* 选项卡：谁可以看 / 发表设置（两行，行高约58px） */
 .opts-card { margin-top: 16px; padding: 5px 0; }
+/* 原画上传卡（黄钻特权，含视频时显示，位于选项卡与同步图标之间） */
+.oq-card { margin-top: 16px; padding: 5px 0; }
 .opt {
   display: flex; align-items: center; gap: 14px;
   height: 58px; padding: 0 20px;
