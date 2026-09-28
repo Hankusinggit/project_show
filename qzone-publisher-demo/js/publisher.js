@@ -37,6 +37,12 @@ const PUB_VIEW_HTML = `
       </div>
 
       <div class="pub-card opts-card">
+        <!-- 长图模式行：≥3 张图且无视频时显示，与「谁可以看/发表设置」同卡（对照真机样式，无间隔） -->
+        <div class="opt" id="liRow" onclick="toggleLongImage()" style="display:none">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/></svg>
+          <span>照片使用长图模式</span>
+          <span class="switch" id="liSwitch"></span>
+        </div>
         <div class="opt" onclick="showSubpage('vis')">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.2 3.4-5 6.5-5s5.7 1.8 6.5 5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 15.2c1.5.7 2.6 2 3 4.8"/></svg>
           <span>谁可以看</span>
@@ -56,15 +62,6 @@ const PUB_VIEW_HTML = `
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2.6 21.4 12 12 21.4 2.6 12z" fill="#F7B500" stroke="#E09B00" stroke-width="1.1" stroke-linejoin="round"/><path d="M7.6 7.6h8.8L12 17z" fill="#FFE08A" opacity="0.85"/></svg>
           <span>上传原画视频</span>
           <span class="switch" id="oqSwitch"></span>
-        </div>
-      </div>
-
-      <!-- 长图模式：≥3 张图且无视频时显示（与原画卡互斥，同槽位） -->
-      <div class="pub-card li-card" id="liCard" style="display:none">
-        <div class="opt" onclick="toggleLongImage()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/></svg>
-          <span>照片使用长图模式</span>
-          <span class="switch" id="liSwitch"></span>
         </div>
       </div>
 
@@ -292,7 +289,8 @@ function renderImages() {
   /* 保持编辑态 class */
   g.classList.toggle('editing', imgEditing);
 
-  /* 长图模式：≥3 张图且无视频且开关开启 → 只显首图缩略图 + 徽标，隐藏添加入口 */
+  /* 长图模式：≥3 张图且无视频且开关开启 → 图区只保留首图一份入口（带徽标，
+     点击进竖向长图查看器），隐藏其余缩略图与「照片/视频」添加入口 */
   const longMode = pubSettings.longImage && imgList.size >= 3 && !imgList.items.some(it => it.isVideo);
 
   /* 有图时隐藏大方块入口（九宫格内有小方块），无图时显示 */
@@ -306,7 +304,7 @@ function renderImages() {
   });
 
   g.innerHTML = '';
-  const renderItems = longMode ? imgList.items.slice(0, 1) : imgList.items;
+  const renderItems = longMode ? imgList.items.slice(0, 1) : imgList.items;   /* 长图模式只显首图一份入口 */
   renderItems.forEach((img, i) => {
     const t = document.createElement('div');
     t.className = 'img-tile';
@@ -321,7 +319,7 @@ function renderImages() {
         '<button class="del" data-i="' + i + '">×</button>';
     } else {
       t.innerHTML = '<img src="' + img.url + '" alt="" draggable="false"><button class="del" data-i="' + i + '">×</button>' +
-        (longMode ? '<span class="longimg-badge">长图模式</span>' : '');
+        (longMode && i === 0 ? '<span class="longimg-badge">长图模式</span>' : '');
     }
     /* 点击图片 → 全屏预览；长图模式开启且满足条件时走竖向长图查看器 */
     t.querySelector('img').addEventListener('click', e => {
@@ -352,7 +350,7 @@ function renderImages() {
   });
 
   /* 照片/视频小方块：有图且未满 9 张时追加在九宫格末尾（无图时由大方块入口负责）；
-     长图模式下隐藏添加入口 */
+     长图模式下隐藏——图区只保留首图一份入口，添加在普通模式进行 */
   if (!longMode && imgList.size > 0 && imgList.size < 9) {
     const addTile = document.createElement('div');
     addTile.className = 'img-tile img-add-tile';
@@ -891,10 +889,10 @@ function toggleOriginalQuality() {
 
 /* 长图模式卡（主页）：≥3 张图且无视频时显示，并同步开关状态 */
 function updateLongImageCard() {
-  const card = $('liCard');
-  if (!card) return;
+  const row = $('liRow');
+  if (!row) return;
   const eligible = imgList.size >= 3 && !imgList.items.some(it => it.isVideo);
-  card.style.display = eligible ? '' : 'none';
+  row.style.display = eligible ? '' : 'none';
   const sw = $('liSwitch');
   if (sw) sw.classList.toggle('on', pubSettings.longImage);
 }

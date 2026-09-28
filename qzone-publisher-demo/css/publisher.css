@@ -138,8 +138,6 @@ body.tile-dragging { user-select: none; -webkit-user-select: none; cursor: grabb
 .opts-card { margin-top: 16px; padding: 5px 0; }
 /* 原画上传卡（黄钻特权，含视频时显示，位于选项卡与同步图标之间） */
 .oq-card { margin-top: 16px; padding: 5px 0; }
-/* 长图模式卡（≥3 张图且无视频时显示，与原画卡互斥同槽位） */
-.li-card { margin-top: 16px; padding: 5px 0; }
 .opt {
   display: flex; align-items: center; gap: 14px;
   height: 58px; padding: 0 20px;

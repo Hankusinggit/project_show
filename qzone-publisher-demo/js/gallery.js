@@ -459,6 +459,8 @@ function openLongImageViewer(urls, opts) {
       renderImages();   /* 恢复九宫格全部缩略图 */
       closeLongImageViewer();
     });
+    /* 单击预览界面即退出（滚动拖拽不触发 click，不会误关） */
+    v.querySelector('#longImgScroll').addEventListener('click', closeLongImageViewer);
   }
   /* 操作栏仅发布器内显示；feed 预览只保留关闭按钮 */
   v.querySelector('#longImgBar').style.display = publisher ? '' : 'none';
